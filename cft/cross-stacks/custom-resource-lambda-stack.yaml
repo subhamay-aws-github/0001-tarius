@@ -1,0 +1,275 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+   CFN Template to create a S3 Custom Resource Lambda Function. 
+
+Metadata:
+  TemplateName: s3-stack.yaml
+  TemplateType: S3 Custom Resource Lambda Function
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack / Cross Stack Standardization
+  Last Modified: December 6, 2022
+  Resources: 
+    - Lambda Function (S3 Custom Resource )
+  StepsToTest: |
+    Manualy verify the Stack.
+  StepsToCleanup: |
+    Stack delete command
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: "Custom Resource Configuration"
+      Parameters:
+      - ProjectName
+      - KmsMasterKeyId
+    ParameterLabels:
+      ProjectName:
+        default: "Project Name."
+      KmsMasterKeyId:
+        default: "The KMS Key Id Used For Encryption."
+
+Parameters:
+  ProjectName:
+    Default: CrossStack
+    Description: "The Project Name for which the custom resource will be used."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: The project name should only contain alphanumeric character and must be between 10 and 20 characters.
+  KmsMasterKeyId:
+    Default: "e4c733c5-9fbe-4a90-bda1-6f0362bc9b89"
+    Description: "The KMS Key Id Used For Encryption."
+    Type: String
+    MinLength: 36
+    MaxLength: 36
+    AllowedPattern: "[a-z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Id should be 36 and must be lowercase alphabets, numbers and dash."
+
+Resources:
+  S3CreateFolderCustomResourceLambdaFunction:
+     Type: AWS::Lambda::Function
+     Properties:
+       FunctionName: !Sub "${ProjectName}-S3-Folder-Creation-Lambda"
+       Description: "Create Folders and Empty an S3 bucket"
+       Handler: index.handler
+       Role: !GetAtt S3CreateFolderCustomResourceLambdaExecutionRole.Arn
+       Timeout: 360
+       Runtime: python3.8
+       Code:
+         ZipFile: |
+            import boto3
+            import cfnresponse
+
+            ### cfnresponse module help in sending responses to CloudFormation
+            ### instead of writing your own code
+
+            def handler(event, context):
+                # Get request type
+                print(event)
+                resource_type = event['ResourceType']
+                response_data = {}
+
+                try:
+                    bucket_name = event['ResourceProperties']['bucket_name']
+                    folders_to_create = event['ResourceProperties']['folders_to_create']
+                    request_type = event['RequestType']
+                    if request_type == 'Delete':
+                        print("Deleting S3 content...")
+                        s3_resource = boto3.resource('s3')
+                        s3_resource.Bucket(str(bucket_name)).objects.all().delete()
+                    elif request_type in ('Create', 'Update'):
+                        s3_client = boto3.client('s3')
+                        for folder in folders_to_create:
+                            if 'do_not_create' not in folder:
+                                print(f"Creating folder: {folder}")
+                                s3_client.put_object(Bucket=bucket_name, Key=(folder + '/'))
+                        # Everything OK.. send the signam back
+                    print("Execution succesfull!")
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+                except Exception as e:
+                    print("Execution failed...")
+                    print(str(e))
+                    response_data['Data'] = str(e)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
+
+                return "success"
+  S3CreateFolderCustomResourceLambdaExecutionRole:
+     Type: AWS::IAM::Role
+     Properties:
+       AssumeRolePolicyDocument:
+         Statement:
+         - Action:
+           - sts:AssumeRole
+           Effect: Allow
+           Principal:
+             Service:
+             - lambda.amazonaws.com
+         Version: '2012-10-17'
+       Path: "/"
+       Policies:
+       - PolicyDocument:
+           Version: '2012-10-17'
+           Statement:
+           - Action:
+             - logs:CreateLogGroup
+             - logs:CreateLogStream
+             - logs:PutLogEvents
+             Effect: Allow
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Folder-Creation-Lambda:*'
+         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-Cloudwatch'
+       - PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Action:
+              - s3:PutObject
+              - s3:DeleteObject
+              - 's3:List*'
+              Effect: Allow
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::*'
+            - Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:GenerateDataKeyPair
+              Effect: Allow
+              Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsMasterKeyId}'
+         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-S3'
+       RoleName: !Sub '${ProjectName}-S3-Create-Folder-Custom-Resource-Role'
+  S3NotificationCustomResourceLambdaFunction:
+     Type: AWS::Lambda::Function
+     Properties:
+       FunctionName: !Sub "${ProjectName}-S3-Notification-Creation-Lambda"
+       Description: "Create S3 Notification for Lambda on an existing S3 bucket"
+       Handler: index.lambda_handler
+       Role: !GetAtt S3NotificationCustomResourceLambdaExecutionRole.Arn
+       Timeout: 360
+       Runtime: python3.8
+       Code:
+         ZipFile: |
+            from __future__ import print_function
+            import json
+            import boto3
+            import cfnresponse
+
+            SUCCESS = "SUCCESS"
+            FAILED = "FAILED"
+
+            print('Loading function')
+            s3 = boto3.resource('s3')
+
+            def lambda_handler(event, context):
+                print("Received event: " + json.dumps(event, indent=2))
+                responseData={}
+                try:
+                    if event['RequestType'] == 'Delete':
+                        print("Request Type:",event['RequestType'])
+                        Bucket=event['ResourceProperties']['Bucket']
+                        delete_notification(Bucket)
+                        print("Sending response to custom resource after Delete")
+                    elif event['RequestType'] == 'Create' or event['RequestType'] == 'Update':
+                        print("Request Type:",event['RequestType'])
+                        LambdaArn=event['ResourceProperties']['LambdaArn']
+                        Bucket=event['ResourceProperties']['Bucket']
+                        NotificationEventName=event['ResourceProperties']['NotificationEventName']
+                        Prefix=event['ResourceProperties']['Prefix']
+                        Suffix=event['ResourceProperties']['Suffix']
+                        add_notification(LambdaArn, Bucket, NotificationEventName, Prefix, Suffix)
+                        responseData={'Bucket':Bucket}
+                        print("Sending response to custom resource")
+                    responseStatus = 'SUCCESS'
+                except Exception as e:
+                    print('Failed to process:', e)
+                    responseStatus = 'FAILED'
+                    responseData = {'Failure': 'Something bad happened.'}
+                cfnresponse.send(event, context, responseStatus, responseData)
+
+            def add_notification(LambdaArn, Bucket, NotificationEventName, Prefix, Suffix):
+                bucket_notification = s3.BucketNotification(Bucket)
+                response = bucket_notification.put(
+                  NotificationConfiguration={
+                    'LambdaFunctionConfigurations': [
+                      {
+                          'Id': NotificationEventName,
+                          'LambdaFunctionArn': LambdaArn,
+                          'Events': [
+                              's3:ObjectCreated:*'
+                          ],
+                          'Filter': {
+                              'Key':{
+                                  'FilterRules': [
+                                      {
+                                          'Name': 'prefix',
+                                          'Value': Prefix
+                                      },
+                                      {
+                                          'Name': 'suffix',
+                                          'Value': Suffix
+                                      }]
+                              }
+                          }
+                      }
+                    ]
+                  }
+                )
+                print("Put request completed....")
+              
+            def delete_notification(Bucket):
+                bucket_notification = s3.BucketNotification(Bucket)
+                response = bucket_notification.put(
+                    NotificationConfiguration={}
+                )
+                print("Delete request completed....")
+
+  S3NotificationCustomResourceLambdaExecutionRole:
+     Type: AWS::IAM::Role
+     Properties:
+       AssumeRolePolicyDocument:
+         Statement:
+         - Action:
+           - sts:AssumeRole
+           Effect: Allow
+           Principal:
+             Service:
+             - lambda.amazonaws.com
+         Version: '2012-10-17'
+       Path: "/"
+       Policies:
+       - PolicyDocument:
+           Statement:
+           - Action:
+             - logs:CreateLogGroup
+             - logs:CreateLogStream
+             - logs:PutLogEvents
+             Effect: Allow
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Notification-Creation-Lambda:*'
+           Version: '2012-10-17'
+         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-Cloudwatch'
+       - PolicyDocument:
+           Statement:
+           - Action:
+             - s3:GetBucketNotification
+             - s3:PutBucketNotification
+             Effect: Allow
+             Resource: !Sub 'arn:${AWS::Partition}:s3:::*'
+           Version: '2012-10-17'
+         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-S3'
+       RoleName: !Sub '${ProjectName}-S3-Notification-Custom-Resource-Role'
+
+Outputs:
+  S3CustomResourceLambdaFunctionExecutionRoleArn:
+    Description: The Arn of the S3 Create Folder Custom Resource Lambda Function Execution Role Arn.
+    Value: !GetAtt S3CreateFolderCustomResourceLambdaExecutionRole.Arn
+  S3CustomResourceLambdaFunctionArn:
+    Description: The Arn of the S3 Create FolderCustom Resource Lambda Function Arn.
+    Value: !GetAtt S3CreateFolderCustomResourceLambdaFunction.Arn
+    Export: 
+      Name: !Sub '${AWS::StackName}-S3CreateFolderCustomResourceLambdaFunctionArn'
+  S3NotificationCustomResourceLambdaFunctionExecutionRoleArn:
+    Description: The Arn of the S3 Nofitication Custom Resource Lambda Function Execution Role Arn.
+    Value: !GetAtt S3NotificationCustomResourceLambdaExecutionRole.Arn
+  S3NotificationCustomResourceLambdaFunctionArn:
+    Description: The Arn of the S3 Notification Custom Resource Lambda Function Arn.
+    Value: !GetAtt S3NotificationCustomResourceLambdaFunction.Arn
+    Export: 
+      Name: !Sub '${AWS::StackName}-S3NoticationCustomResourceLambdaFunctionArn'

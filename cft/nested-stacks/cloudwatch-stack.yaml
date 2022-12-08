@@ -1,0 +1,497 @@
+AWSTemplateFormatVersion : 2010-09-09
+Description: >-
+ CFN Template To Create A CloudWatch Alarms.
+
+Metadata:
+  TemplateName: cloudwatch-stack.yaml
+  TemplateType: CloudWatch Alarm.
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack Standardization
+  Last Modified: December 6, 2022
+  Resources: 
+    - One CloudWatch Alarm.
+  StepsToTest: |
+    Manualy verify the Stack.
+  StepsToCleanup: |
+    Stack delete command
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label: 
+        default: "Project Name:"
+      Parameters: 
+        - ProjectName
+    - Label: 
+        default: "Lambda Function:"
+      Parameters: 
+        - LambdaFunctionName
+    - Label: 
+        default: "SNS Topic:"
+      Parameters: 
+        - SNSTopicName
+    - Label: 
+        default: "1. CloudWatch Lambda Invocations Alarm Configuration"
+      Parameters: 
+        - AlarmNameLambdaInvocations
+        - AlarmComparisonOperatorLambdaInvocations
+        - AlarmThresholdLambdaInvocations
+        - AlarmPeriodInSecondsLambdaInvocations
+        - DatapointsToAlarmLambdaInvocations
+        - EvaluationPeriodsForLambdaInvocations
+    - Label: 
+        default: "2. CloudWatch Lambda Error Alarm Configuration"
+      Parameters: 
+        - AlarmNameLambdaErrors
+        - AlarmComparisonOperatorLambdaErrors
+        - AlarmThresholdLambdaErrors
+        - AlarmPeriodInSecondsLambdaErrors
+        - DatapointsToAlarmLambdaErrors
+        - EvaluationPeriodsForLambdaErrors
+    - Label: 
+        default: "3. CloudWatch Lambda Throttles Alarm Configuration"
+      Parameters: 
+        - AlarmNameLambdaThrottles
+        - AlarmComparisonOperatorLambdaThrottles
+        - AlarmThresholdLambdaThrottles
+        - AlarmPeriodInSecondsLambdaThrottles
+        - DatapointsToAlarmLambdaThrottles
+        - EvaluationPeriodsForLambdaThrottles
+    - Label: 
+        default: "4. CloudWatch Lambda Duration Alarm Configuration"
+      Parameters: 
+        - AlarmNameLambdaDuration
+        - AlarmComparisonOperatorLambdaDuration
+        - AlarmThresholdLambdaDuration
+        - AlarmPeriodInSecondsLambdaDuration
+        - DatapointsToAlarmLambdaDuration
+        - EvaluationPeriodsForLambdaDuration
+    - Label: 
+        default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration"
+      Parameters: 
+        - AlarmNameLambdaConcurrentExecutions
+        - AlarmComparisonOperatorLambdaConcurrentExecutions
+        - AlarmThresholdLambdaConcurrentExecutions
+        - AlarmPeriodInSecondsLambdaConcurrentExecutions
+        - DatapointsToAlarmLambdaConcurrentExecutions
+        - EvaluationPeriodsForLambdaConcurrentExecutions
+    ParameterLabels:
+      ProjectName:
+        default: "Project Name."
+      LambdaFunctionName: 
+        default: "Lambda Function Name for which the CloudWatch Alarm will be created."
+      SNSTopicName: 
+        default: "SNS Topic Name used in the CloudWatch Alarm."
+      ############## 1. Invocations
+      AlarmNameLambdaInvocations:
+        default: "Lambda Invocations CloudWatch Alarm Name."
+      AlarmComparisonOperatorLambdaInvocations: 
+        default: "Lambda Invocations CloudWatch invocation condition."
+      AlarmThresholdLambdaInvocations: 
+        default: "Lambda Invocations CloudWatch Alarm Threshold."
+      AlarmPeriodInSecondsLambdaInvocations: 
+        default: "Lambda Invocations CloudWatch Alarm Period in Seconds."
+      DatapointsToAlarmLambdaInvocations:  
+        default: "Lambda Invocations CloudWatch Alarm Datapoints."
+      EvaluationPeriodsForLambdaInvocations:
+        default: "The number of periods over which data is compared to the specified threshold."
+      ############## 2. Errors
+      AlarmNameLambdaErrors:
+        default: "Lambda Errors CloudWatch Alarm Name."
+      AlarmComparisonOperatorLambdaErrors: 
+        default: "Lambda Errors CloudWatch invocation condition."
+      AlarmThresholdLambdaErrors: 
+        default: "Lambda Errors CloudWatch Alarm Threshold."
+      AlarmPeriodInSecondsLambdaErrors: 
+        default: "Lambda Errors CloudWatch Alarm Period in Seconds."
+      DatapointsToAlarmLambdaErrors:  
+        default: "Lambda Errors CloudWatch Alarm Datapoints."
+      EvaluationPeriodsForLambdaErrors:
+        default: "Lambda Errors Evaluation Period in seconds."
+      ############## 3. Throttles
+      AlarmNameLambdaThrottles:
+        default: "Lambda Throttles CloudWatch Alarm Name."
+      AlarmComparisonOperatorLambdaThrottles: 
+        default: "Lambda Throttles CloudWatch invocation condition."
+      AlarmThresholdLambdaThrottles: 
+        default: "Lambda Throttles CloudWatch Alarm Threshold."
+      AlarmPeriodInSecondsLambdaThrottles: 
+        default: "Lambda Throttles CloudWatch Alarm Period in Seconds."
+      DatapointsToAlarmLambdaThrottles:  
+        default: "Lambda Throttles CloudWatch Alarm Datapoints."
+      EvaluationPeriodsForLambdaThrottles:
+        default: "Lambda Throttles Evaluation Period in seconds."
+      ############## 4. Duration
+      AlarmNameLambdaDuration:
+        default: "Lambda Duration CloudWatch Alarm Name."
+      AlarmComparisonOperatorLambdaDuration: 
+        default: "Lambda Duration CloudWatch invocation condition."
+      AlarmThresholdLambdaDuration: 
+        default: "Lambda Duration CloudWatch Alarm Threshold."
+      AlarmPeriodInSecondsLambdaDuration: 
+        default: "Lambda Duration CloudWatch Alarm Period in Seconds."
+      DatapointsToAlarmLambdaDuration:  
+        default: "Lambda Duration CloudWatch Alarm Datapoints."
+      EvaluationPeriodsForLambdaDuration:
+        default: "Lambda Duration Evaluation Period in seconds."
+      ############## 5. Concurrent Executions
+      AlarmNameLambdaConcurrentExecutions:
+        default: "Lambda Concurrent Executions CloudWatch Alarm Name."
+      AlarmComparisonOperatorLambdaConcurrentExecutions: 
+        default: "Lambda Concurrent Executions CloudWatch invocation condition."
+      AlarmThresholdLambdaConcurrentExecutions: 
+        default: "Lambda Concurrent Executions CloudWatch Alarm Threshold."
+      AlarmPeriodInSecondsLambdaConcurrentExecutions: 
+        default: "Lambda Concurrent Executions CloudWatch Alarm Period in Seconds."
+      DatapointsToAlarmLambdaConcurrentExecutions:  
+        default: "Lambda Concurrent Executions CloudWatch Alarm Datapoints."
+      EvaluationPeriodsForLambdaConcurrentExecutions:
+        default: "Lambda Concurrent Executions Evaluation Period in seconds."
+Parameters:
+  ProjectName:
+    Default: ProjectName
+    Description: "The Project Name."
+    Type: String
+    MinLength: 5
+    MaxLength: 30
+    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+  LambdaFunctionName:
+    Default: cwalarm-lambda
+    Description: "The Lambda Function Arn for which the CloudWatch Alarm will be created."
+    Type: String
+    MinLength: '5'
+    MaxLength: '255'
+    AllowedPattern: '[a-zA-Z0-9-]*'
+    ConstraintDescription: Must be between 5 and 255 characters long and begin with a letter and can contain number or hyphen (-).
+  SNSTopicName:
+    Default: "cloudwatch-alarm-sns-topic"
+    Description: The SNS Topic Arn.
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: "[a-z][a-z0-9-]*"
+    ConstraintDescription: The length should be between 10 and 50, must contain only lowercase letter,numbers,dash, dot and should start with a letter.
+  ################ 1. Lambda Invocations
+  AlarmNameLambdaInvocations:
+    Default: lambda-function-invocations-alarm
+    Description: "The Lambda Invocations Demo Alarm."
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: '[a-zA-Z-]*'
+    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
+  AlarmThresholdLambdaInvocations:
+    Default: 5
+    Description: "The Cloudwatch Alarm Threshold. Number Of Lambda Executions After Which The Alarm Will Be Triggered."
+    Type: Number
+    MinValue: 1
+    MaxValue: 99
+    ConstraintDescription: must be between 70 and 99.
+  AlarmPeriodInSecondsLambdaInvocations:
+    Default: 900
+    Description: "The Period, In Seconds, Over Which The Statistic Is Applied."
+    Type: Number
+    MinValue: 10
+    MaxValue: 3600
+    ConstraintDescription: "Must be between 10 and 3600 seconds."
+  DatapointsToAlarmLambdaInvocations: 
+    Default: 1
+    Description: "The CloudWatch Alarm Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: must be between 1 and 10 seconds.
+  EvaluationPeriodsForLambdaInvocations: 
+    Default: 1
+    Description: "The Number Of Periods Over Which Data Is Compared To The Specified Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: "Must be between 1 and 3 Hours."
+  AlarmComparisonOperatorLambdaInvocations:
+    Default: "GreaterThanOrEqualToThreshold"
+    Type: String
+    AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
+  ################ 2. Lambda Errors
+  AlarmNameLambdaErrors:
+    Default: lambda-function-errors-alarm
+    Description: "The Lambda Errors Demo Alarm."
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: '[a-zA-Z-]*'
+    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
+  AlarmThresholdLambdaErrors:
+    Default: 2
+    Description: "the Cloudwatch Alarm Threshold. After The Number Of Lambda Errors The Alarm Will Be Triggered."
+    Type: Number
+    MinValue: 1
+    MaxValue: 99
+    ConstraintDescription: "Must be between 1 and 99."
+  AlarmPeriodInSecondsLambdaErrors:
+    Default: 900
+    Description: "The Period, In Seconds, Over Which The Statistic Is Applied."
+    Type: Number
+    MinValue: 10
+    MaxValue: 3600
+    ConstraintDescription: "Must be between 10 and 3600 seconds."
+  DatapointsToAlarmLambdaErrors: 
+    Default: 1
+    Description: "The CloudWatch Alarm Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: "Must be between 1 and 10 seconds."
+  EvaluationPeriodsForLambdaErrors: 
+    Default: 1
+    Description: "The Number Of Periods Over Which Data Is Compared To The Specified Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: "Must be between 1 and 3 Hours."
+  AlarmComparisonOperatorLambdaErrors:
+    Default: "GreaterThanOrEqualToThreshold"
+    Type: String
+    AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
+  ################ 3. Lambda Throttles
+  AlarmNameLambdaThrottles:
+    Default: lambda-function-throttles-alarm
+    Description: "The Lambda Throttles Demo Alarm."
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: '[a-zA-Z-]*'
+    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
+  AlarmThresholdLambdaThrottles:
+    Default: 3
+    Description: "The Cloudwatch Alarm Threshold.The Number Of Lambda Throttles After Which The Alarm Will Be Triggered."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: "Must be between 0 and 10."
+  AlarmPeriodInSecondsLambdaThrottles:
+    Default: 600
+    Description: "The Period, In Seconds, Over Which The Statistic Is Applied."
+    Type: Number
+    MinValue: 10
+    MaxValue: 3600
+    ConstraintDescription: "Must be between 10 and 3600 seconds."
+  DatapointsToAlarmLambdaThrottles: 
+    Default: 1
+    Description: "The CloudWatch Alarm Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: "Must be between 1 and 10 seconds."
+  EvaluationPeriodsForLambdaThrottles: 
+    Default: 1
+    Description: "The Number Of Periods Over Which Data Is Compared To The Specified Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: "Must be between 1 and 3 Hours."
+  AlarmComparisonOperatorLambdaThrottles:
+    Default: "GreaterThanOrEqualToThreshold"
+    Type: String
+    AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
+  ################ 4. Lambda Duration
+  AlarmNameLambdaDuration:
+    Default: lambda-function-duration-alarm
+    Description: "The Lambda Duration Demo Alarm."
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: '[a-zA-Z-]*'
+    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
+  AlarmThresholdLambdaDuration:
+    Default: 750000
+    Description: "The CloudWatch Alarm Threshold.The Number Of Milliseconds The Alarm Will Be Triggered."
+    Type: Number
+    MinValue: 0
+    MaxValue: 900000
+    ConstraintDescription: "Must be between 0 and 900000."
+  AlarmPeriodInSecondsLambdaDuration:
+    Default: 900
+    Description: "The Period, In Seconds, Over Which The Statistic Is Applied."
+    Type: Number
+    MinValue: 10
+    MaxValue: 3600
+    ConstraintDescription: "Must be between 10 and 3600 seconds."
+  DatapointsToAlarmLambdaDuration: 
+    Default: 1
+    Description: "The CloudWatch Alarm Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: "Must be between 1 and 10 seconds."
+  EvaluationPeriodsForLambdaDuration: 
+    Default: 1
+    Description: "The Number Of Periods Over Which Data Is Compared To The Specified Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: "Must be between 1 and 3 Hours."
+  AlarmComparisonOperatorLambdaDuration:
+    Default: "GreaterThanOrEqualToThreshold"
+    Type: String
+    AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
+  ################ 5. Lambda Concurrent Executions
+  AlarmNameLambdaConcurrentExecutions:
+    Default: lambda-function-concurrent-executions-alarm
+    Description: "The Lambda Concurrent Executions Demo Alarm."
+    Type: String
+    MinLength: 10
+    MaxLength: 50
+    AllowedPattern: '[a-zA-Z-]*'
+    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
+  AlarmThresholdLambdaConcurrentExecutions:
+    Default: 3
+    Description: "The CloudWatch Alarm Threshold.After the number of concurrent executions the alarm will be triggered."
+    Type: Number
+    MinValue: 0
+    MaxValue: 10
+    ConstraintDescription: "Must be between 0 and 10."
+  AlarmPeriodInSecondsLambdaConcurrentExecutions:
+    Default: 60
+    Description: "The Period, In Seconds, Over Which The Statistic Is Applied."
+    Type: Number
+    MinValue: 10
+    MaxValue: 3600
+    ConstraintDescription: "Must be between 10 and 3600 seconds."
+  DatapointsToAlarmLambdaConcurrentExecutions: 
+    Default: 1
+    Description: "The CloudWatch Alarm Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 10
+    ConstraintDescription: "Must be between 1 and 10 seconds."
+  EvaluationPeriodsForLambdaConcurrentExecutions: 
+    Default: 1
+    Description: "The Number Of Periods Over Which Data Is Compared To The Specified Threshold."
+    Type: Number
+    MinValue: 1
+    MaxValue: 3
+    ConstraintDescription: "Must be between 1 and 3 Hours."
+  AlarmComparisonOperatorLambdaConcurrentExecutions:
+    Default: "GreaterThanOrEqualToThreshold"
+    Type: String
+    AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
+Resources:
+  CloudWatchAlarmInvocations:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub '${AlarmNameLambdaInvocations}-${AWS::Region}'
+      AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function invocations" 
+      AlarmActions:
+        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
+      ComparisonOperator: !Ref AlarmComparisonOperatorLambdaInvocations
+      MetricName: "Invocations"
+      Namespace: AWS/Lambda
+      Statistic: "Sum"
+      Threshold: !Ref AlarmThresholdLambdaInvocations
+      DatapointsToAlarm: !Ref DatapointsToAlarmLambdaInvocations
+      EvaluationPeriods: !Ref EvaluationPeriodsForLambdaInvocations       #### Datapoints to alarm -> DatapointsToAlarm out of EvaluationPeriods
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+      Period: !Ref AlarmPeriodInSecondsLambdaInvocations
+      TreatMissingData: notBreaching
+  CloudWatchAlarmErrors:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub '${AlarmNameLambdaErrors}-${AWS::Region}'
+      AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function errors" 
+      AlarmActions:
+        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
+      ComparisonOperator: !Ref AlarmComparisonOperatorLambdaErrors
+      MetricName: "Errors"
+      Namespace: AWS/Lambda
+      Statistic: "Sum"
+      Threshold: !Ref AlarmThresholdLambdaErrors
+      DatapointsToAlarm: !Ref DatapointsToAlarmLambdaErrors
+      EvaluationPeriods: !Ref EvaluationPeriodsForLambdaErrors
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+      Period: !Ref AlarmPeriodInSecondsLambdaErrors
+      TreatMissingData: notBreaching
+  CloudWatchAlarmThrottles:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub '${AlarmNameLambdaThrottles}-${AWS::Region}'
+      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function throttles" 
+      AlarmActions: 
+        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
+      ComparisonOperator: !Ref AlarmComparisonOperatorLambdaThrottles
+      MetricName: "Throttles"
+      Namespace: AWS/Lambda
+      Statistic: "Sum"
+      Threshold: !Ref AlarmThresholdLambdaThrottles
+      DatapointsToAlarm: !Ref DatapointsToAlarmLambdaThrottles
+      EvaluationPeriods: !Ref EvaluationPeriodsForLambdaThrottles
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+      Period: !Ref AlarmPeriodInSecondsLambdaThrottles
+      TreatMissingData: notBreaching
+  CloudWatchAlarmDuration:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub '${AlarmNameLambdaDuration}-${AWS::Region}'
+      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function duration" 
+      AlarmActions:
+        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
+      ComparisonOperator: !Ref AlarmComparisonOperatorLambdaDuration
+      MetricName: "Duration"
+      Namespace: AWS/Lambda
+      Statistic: "Average"
+      Threshold: !Ref AlarmThresholdLambdaDuration
+      DatapointsToAlarm: !Ref DatapointsToAlarmLambdaDuration
+      EvaluationPeriods: !Ref EvaluationPeriodsForLambdaDuration
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+      Period: !Ref AlarmPeriodInSecondsLambdaDuration
+      TreatMissingData: notBreaching
+  CloudWatchAlarmConcurrentExecutions:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub '${AlarmNameLambdaConcurrentExecutions}-${AWS::Region}'
+      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda concurrent executions" 
+      AlarmActions:
+        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
+      ComparisonOperator: !Ref AlarmComparisonOperatorLambdaConcurrentExecutions
+      MetricName: "ConcurrentExecutions"
+      Namespace: AWS/Lambda
+      Statistic: "Sum"
+      Threshold: !Ref AlarmThresholdLambdaConcurrentExecutions
+      DatapointsToAlarm: !Ref DatapointsToAlarmLambdaConcurrentExecutions
+      EvaluationPeriods: !Ref EvaluationPeriodsForLambdaConcurrentExecutions
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+      Period: !Ref AlarmPeriodInSecondsLambdaConcurrentExecutions
+      TreatMissingData: notBreaching
+
+Outputs:
+    CloudWatchAlarmLambdaInvocationsArn:
+      Description: The Arn of the Lambda Invocation CloudWatch Alarm
+      Value: !GetAtt CloudWatchAlarmInvocations.Arn
+    CloudWatchAlarmLambdaErrorsArn: 
+      Description: The Arn of the Lambda Errors CloudWatch Alarm
+      Value: !GetAtt CloudWatchAlarmErrors.Arn
+    CloudWatchAlarmLambdaThrottlesArn: 
+      Description: The Arn of the Lambda Throttles CloudWatch Alarm
+      Value: !GetAtt CloudWatchAlarmThrottles.Arn
+    CloudWatchAlarmLambdaDurationArn: 
+      Description: The Arn of the Lambda Duration CloudWatch Alarm
+      Value: !GetAtt CloudWatchAlarmDuration.Arn
+    CloudWatchAlarmLambdaConurrentExecutionsArn: 
+      Description: The Arn of the Lambda Concurrent Executions CloudWatch Alarm
+      Value: !GetAtt CloudWatchAlarmConcurrentExecutions.Arn

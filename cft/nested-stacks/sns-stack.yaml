@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+   CFN Template To Create A SNS Topic With Email Subscription. 
+
+Metadata:
+  TemplateName: sns-stack.yaml
+  TemplateType: SNS Topic
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack Standardization
+  Last Modified: December 6, 2022
+  Resources: 
+    - SNS Topic with Email subscription
+  StepsToTest: |
+    Manualy verify the Stack.
+  StepsToCleanup: |
+    Stack delete command
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label: 
+        default: "Project Name."
+      Parameters: 
+        - ProjectName
+    - Label: 
+        default: "SNS Configuration."
+      Parameters: 
+        - SNSTopicBaseName
+        - SNSTopicDisplayName
+        - SNSSubscriptionEmail
+        - SNSKmsMasterKeyAlias
+    ParameterLabels:
+      ProjectName:
+        default: "The Project Name."
+      SNSTopicBaseName:
+        default: "The SNS Topic Name."
+      SNSTopicDisplayName:
+        default: "The SNS Topic Display Name."
+      SNSSubscriptionEmail:
+        default: "The Email To Subscribe To The SNS Topic."
+      SNSKmsMasterKeyAlias: 
+        default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+Parameters:
+  ProjectName:
+    Default: ProjectName
+    Description: "The Project Name."
+    Type: String
+    MinLength: 5
+    MaxLength: 30
+    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+  SNSTopicBaseName:
+    Default: "sns-topic-name"
+    Description: "The Base Name Of The Sns Topic."
+    Type: String
+    MinLength: 10
+    MaxLength: 40
+    AllowedPattern: "[a-z][a-z0-9-]*"
+    ConstraintDescription: "The length should be between 10 and 40, must contain only lowercase letter, number, dash, dot and should start with a letter."
+  SNSTopicDisplayName:
+    Default: "SNS Topic Name For Sending Notification"
+    Description: "The SNS Topic Display Name."
+    Type: String
+    MinLength: 30
+    MaxLength: 200
+    AllowedPattern: "[a-zA-Z0-9-. _]*"
+    ConstraintDescription: "The length should be between 30 and 200, must alphanumeric character, space, dot dash or underscore."
+  SNSSubscriptionEmail:
+    Default: "someone@email.com"
+    Description: "The Subscription Email For The SNS Topic."
+    Type: String
+    MinLength: 10
+    MaxLength: 100
+    AllowedPattern: "[a-zA-Z0-9-.@_]*"
+    ConstraintDescription: "The length should be between 10 and 100, must be a valid email id."
+  SNSKmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Ref SNSTopicDisplayName
+      TopicName: !Sub '${SNSTopicBaseName}-${AWS::Region}'
+      KmsMasterKeyId: !Sub 'alias/${SNSKmsMasterKeyAlias}'
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+  SNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref SNSSubscriptionEmail
+      TopicArn: !Ref SNSTopic
+Outputs:
+  SNSTopicArn:
+    Description: The Arn of the SNS Topic.
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-SNSTopicArn'
+  SNSSubscriptionArn:
+    Description: The Arn of the SNS Subscription.
+    Value: !Ref SNSSubscription

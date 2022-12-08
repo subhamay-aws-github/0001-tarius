@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+   CFN Template To Create A DynamoDB Table. 
+
+Metadata:
+  TemplateName: dynamodb-stack.yaml
+  TemplateType: DynamoDB table
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack Standardization
+  Last Modified: December 6, 2022
+  Resources: 
+    - DynamoDB table
+  StepsToTest: |
+    Manualy verify the Stack.
+  StepsToCleanup: |
+    Stack delete command
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label: 
+        default: "Project Name"
+      Parameters: 
+        - ProjectName
+    - Label: 
+        default: "DynamoDB Configuration"
+      Parameters: 
+        - DynamoDBTableWithoutSortKey
+        - DynamoDBTableName
+        - DynamoDBTablePartitionKey
+        - DynamoDBTableSortKey
+        - DynamoDBTablePartitionKeyAttributeType
+        - DynamoDBTableSortKeyAttributeType
+        - DynamoDBTableKmsMasterKeyAlias
+    ParameterLabels:
+      DynamoDBTableWithoutSortKey: 
+        default: "Create the DyanmoDB table without sort key ? "
+      DynamoDBTableName: 
+        default: "The Name of the DynamoDB Table."
+      DynamoDBTablePartitionKey:
+        default: "The Name of the Partition Key."
+      DynamoDBTableSortKey:
+        default: "The Name of the Sort Key."
+      DynamoDBTablePartitionKeyAttributeType: 
+        default: "The Datatype of the DynamoDB Partition Key"
+      DynamoDBTableSortKeyAttributeType: 
+        default: "The Datatype of the DynamoDB Sort Key"
+      DynamoDBTableKmsMasterKeyAlias: 
+        default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+
+Parameters:
+  ProjectName:
+    Default: ProjectName
+    Description: "The Project Name."
+    Type: String
+    MinLength: 5
+    MaxLength: 30
+    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+  DynamoDBTableWithoutSortKey:
+    Default: true
+    Description: "Create The Dynamodb Table Without Sort Key ?"
+    Type: String
+    AllowedValues: [true, false]
+    ConstraintDescription: "The allowed value is either true or false"
+  DynamoDBTableName:
+    Default: dynamodb-table-name
+    Description: "The Name Of The Dynamodb Table."
+    Type: String
+    MinLength: 10
+    MaxLength: 40
+    AllowedPattern: "[a-z][a-z0-9-]*"
+    ConstraintDescription: "The length should be between 10 and 40, must contain only lowercase letter, number, dash and should start with a letter."
+  DynamoDBTablePartitionKey:
+    Default: partition_id
+    Description: "The Name Of The Dynamodb Partition Key."
+    Type: String
+    MinLength: '5'
+    MaxLength: '30'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
+    ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
+  DynamoDBTablePartitionKeyAttributeType:
+    Default: "N"
+    Description: "The Datatype Of The Dynamodb Partition Key."
+    Type: String
+    AllowedValues: ["N", "S", "B"]
+    ConstraintDescription: "the Datatype Should Be Either N (number), S (string) Or B (binary)"
+  DynamoDBTableSortKey:
+    Default: sort_id
+    Description: "The Name Of The Dynamodb Sort Key (Type skip If Creating The Table Without Sort Key)."
+    Type: String
+    MinLength: '0'
+    MaxLength: '30'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
+    ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
+  DynamoDBTableSortKeyAttributeType:
+    Default: "N"
+    Description: "the Datatype Of The Dynamodb Sort Key."
+    Type: String
+    AllowedValues: ["N", "S", "B"]
+    ConstraintDescription: "The datatype should be either N (Number), S (String) or B (Binary)"
+  DynamoDBTableKmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Id To Be Used For Server Side Encryption."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+
+Conditions:
+  CreateDynamoDBTableWithoutSortKey: !Equals [ !Ref DynamoDBTableWithoutSortKey, true ]
+  CreateDynamoDBTableWithSortKey: !Equals [ !Ref DynamoDBTableWithoutSortKey, false ]
+
+Resources:
+  DynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Condition: CreateDynamoDBTableWithoutSortKey
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: !Ref DynamoDBTablePartitionKey
+          AttributeType: "N"
+      KeySchema: 
+        - 
+          AttributeName: !Ref DynamoDBTablePartitionKey
+          KeyType: "HASH"
+      TableName: !Ref DynamoDBTableName
+      BillingMode: PAY_PER_REQUEST 
+      SSESpecification:
+            KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
+            SSEEnabled: True
+            SSEType: KMS
+      Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+  DynamoDBTableWithSortKey: 
+    Type: AWS::DynamoDB::Table
+    Condition: CreateDynamoDBTableWithSortKey
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: !Ref DynamoDBTablePartitionKey
+          AttributeType: !Ref DynamoDBTablePartitionKeyAttributeType
+        - 
+          AttributeName: !Ref DynamoDBTableSortKey
+          AttributeType: !Ref DynamoDBTableSortKeyAttributeType
+      KeySchema: 
+        - 
+          AttributeName: !Ref DynamoDBTablePartitionKey
+          KeyType: "HASH"
+      TableName: !Ref DynamoDBTableName
+      BillingMode: PAY_PER_REQUEST 
+      SSESpecification:
+            KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
+            SSEEnabled: True
+            SSEType: KMS
+      Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+Outputs:
+  DynamoDBTableArn:
+    Condition: CreateDynamoDBTableWithoutSortKey
+    Description: The Arn of the DynamoDB Table.
+    Value: !GetAtt DynamoDBTable.Arn
+  DynamoDBTableWithSortKeyArn:
+    Condition: CreateDynamoDBTableWithSortKey
+    Description: The Arn of the DynamoDB Table.
+    Value: !GetAtt DynamoDBTableWithSortKey.Arn

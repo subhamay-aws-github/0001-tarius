@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+   CFN Template To Create A S3 Table With Or Without A Folder. 
+
+Metadata:
+  TemplateName: s3-stack.yaml
+  TemplateType: S3 bucket with optionally default folder
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack Standardization
+  Last Modified: December 6, 2022
+  Resources: 
+    - S3 Bucket
+  StepsToTest: |
+    Manualy verify the Stack.
+  StepsToCleanup: |
+    Stack delete command
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label: 
+        default: "Project Name"
+      Parameters: 
+        - ProjectName
+    - Label:
+        default: "S3 Configuration"
+      Parameters:
+      - S3LandingZoneBucketBaseName
+      - S3DataBucketFolder
+      - S3BucketBlockPublicAcls
+      - S3BucketBlockPublicPolicy
+      - S3BucketIgnorePublicAcls
+      - S3BucketRestrictPublicBuckets
+      - S3KmsMasterKeyAlias
+    ParameterLabels:
+      S3LandingZoneBucketBaseName:
+        default: "S3 Bucket Base Name."
+      S3DataBucketFolder:
+        default: "The folder(s) to be created."
+      S3BucketBlockPublicAcls:
+        default: "Allow BlockPublicAcls"
+      S3BucketBlockPublicPolicy:
+        default: "Allow BlockPublicPolicy"
+      S3BucketIgnorePublicAcls:
+        default: "Allow IgnorePublicAcls"
+      S3BucketRestrictPublicBuckets:
+        default: "Allow restrictPublicBuckets"
+      S3KmsMasterKeyAlias:
+        default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+Parameters:
+  ProjectName:
+    Default: ProjectName
+    Description: "The Project Name."
+    Type: String
+    MinLength: 5
+    MaxLength: 30
+    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."  
+  S3LandingZoneBucketBaseName:
+    Default: some-s3-bucket-name
+    Description: "The S3 Bucket Base Name For The Source Data, The Region Will Be Added As Suffix By The Template."
+    Type: String
+    MinLength: 3
+    MaxLength: 40
+    AllowedPattern: "[a-z][a-z0-9-.]*"
+    ConstraintDescription: "The length should be between 3 and 40, must contain only lowercase letter,numbers,dash, dot and should start with a letter."
+  S3DataBucketFolder:
+    Default: "raw-data"
+    Description: "The Folder To Be Created For Stroing The Raw Data. Use do_not_create If You Do Not Want To Create Any Folder."
+    Type: CommaDelimitedList
+    ConstraintDescription: "Should be a comma seperated folder names."
+  S3BucketBlockPublicAcls:
+    Default: true
+    Description: "Allow Block Public Acls"
+    Type: String
+    AllowedValues: [true, false]
+  S3BucketBlockPublicPolicy:
+    Default: true
+    Description: "Allow Block Public Policy"
+    Type: String
+    AllowedValues: [true, false]
+  S3BucketIgnorePublicAcls:
+    Default: true
+    Description: "Allow Ignore Public Acls"
+    Type: String
+    AllowedValues: [true, false]
+  S3BucketRestrictPublicBuckets:
+    Default: true
+    Description: "Allow Restrict Public Buckets"
+    Type: String
+    AllowedValues: [true, false]
+  S3CustomResourceStackName:
+    Default: "s3-custom-resource-stack"
+    Description: "S3 Custom Resource Stack Name"
+    Type: String
+  S3KmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+Resources:
+  S3LandingZoneBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${S3LandingZoneBucketBaseName}-${AWS::Region}"
+      BucketEncryption:
+          ServerSideEncryptionConfiguration: 
+          - BucketKeyEnabled: True
+            ServerSideEncryptionByDefault: 
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !Sub 'alias/${S3KmsMasterKeyAlias}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref S3BucketBlockPublicAcls
+        BlockPublicPolicy: !Ref S3BucketBlockPublicPolicy
+        IgnorePublicAcls: !Ref S3BucketIgnorePublicAcls
+        RestrictPublicBuckets: !Ref S3BucketRestrictPublicBuckets
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+  S3DataBucketCustomResource:
+    Type: Custom::S3CustomResource
+    Properties:
+      ServiceToken: 
+        Fn::ImportValue: !Sub '${S3CustomResourceStackName}-S3CreateFolderCustomResourceLambdaFunctionArn' 
+      bucket_name: !Ref S3LandingZoneBucket
+      folders_to_create: !Ref S3DataBucketFolder
+Outputs:
+  S3LandingZoneBucketArn:
+    Description: The endpoint of the S3 source data bucket.
+    Value: !GetAtt S3LandingZoneBucket.Arn
