@@ -19,11 +19,12 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label: 
-        default: "Project Name."
+        default: "Project And Environment:"
       Parameters: 
         - ProjectName
+        - Environment
     - Label: 
-        default: "SNS Configuration."
+        default: "SNS Configuration:"
       Parameters: 
         - SNSTopicBaseName
         - SNSTopicDisplayName
@@ -32,6 +33,8 @@ Metadata:
     ParameterLabels:
       ProjectName:
         default: "The Project Name."
+      Environment:
+        default: "Environment Name."
       SNSTopicBaseName:
         default: "The SNS Topic Name."
       SNSTopicDisplayName:
@@ -42,13 +45,19 @@ Metadata:
         default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
 Parameters:
   ProjectName:
-    Default: ProjectName
+    Default: project
     Description: "The Project Name."
     Type: String
     MinLength: 5
     MaxLength: 30
-    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
-    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+    AllowedPattern: "[a-z]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only lowercase alphabets."
+  Environment:
+    Default: devl
+    Description: "The Environment Name."
+    Type: String
+    AllowedValues: ["devl", "test", "prod"]
+    ConstraintDescription: "The Environment must be devl / test or prod"
   SNSTopicBaseName:
     Default: "sns-topic-name"
     Description: "The Base Name Of The Sns Topic."
@@ -87,11 +96,13 @@ Resources:
     Type: AWS::SNS::Topic
     Properties: 
       DisplayName: !Ref SNSTopicDisplayName
-      TopicName: !Sub '${SNSTopicBaseName}-${AWS::Region}'
+      TopicName: !Sub '${SNSTopicBaseName}-${Environment}-${AWS::Region}'
       KmsMasterKeyId: !Sub 'alias/${SNSKmsMasterKeyAlias}'
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   SNSSubscription:
     Type: AWS::SNS::Subscription
     Properties:

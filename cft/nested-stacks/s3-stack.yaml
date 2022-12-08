@@ -22,6 +22,7 @@ Metadata:
         default: "Project Name"
       Parameters: 
         - ProjectName
+        - Environment
     - Label:
         default: "S3 Configuration"
       Parameters:
@@ -33,6 +34,10 @@ Metadata:
       - S3BucketRestrictPublicBuckets
       - S3KmsMasterKeyAlias
     ParameterLabels:
+      ProjectName:
+        default: "Project Name."
+      Environment:
+        default: "Environment Name."
       S3LandingZoneBucketBaseName:
         default: "S3 Bucket Base Name."
       S3DataBucketFolder:
@@ -49,13 +54,19 @@ Metadata:
         default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
 Parameters:
   ProjectName:
-    Default: ProjectName
+    Default: project
     Description: "The Project Name."
     Type: String
     MinLength: 5
     MaxLength: 30
-    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
-    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."  
+    AllowedPattern: "[a-z]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only lowercase alphabets."
+  Environment:
+    Default: devl
+    Description: "The Environment Name."
+    Type: String
+    AllowedValues: ["devl", "test", "prod"]
+    ConstraintDescription: "The Environment must be devl / test or prod" 
   S3LandingZoneBucketBaseName:
     Default: some-s3-bucket-name
     Description: "The S3 Bucket Base Name For The Source Data, The Region Will Be Added As Suffix By The Template."
@@ -105,7 +116,7 @@ Resources:
   S3LandingZoneBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${S3LandingZoneBucketBaseName}-${AWS::Region}"
+      BucketName: !Sub "${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}"
       BucketEncryption:
           ServerSideEncryptionConfiguration: 
           - BucketKeyEnabled: True
@@ -120,6 +131,8 @@ Resources:
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   S3DataBucketCustomResource:
     Type: Custom::S3CustomResource
     Properties:

@@ -19,9 +19,10 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label: 
-        default: "Project Name"
+        default: "Project And Environment:"
       Parameters: 
         - ProjectName
+        - Environment
     - Label: 
         default: "DynamoDB Configuration"
       Parameters: 
@@ -33,6 +34,10 @@ Metadata:
         - DynamoDBTableSortKeyAttributeType
         - DynamoDBTableKmsMasterKeyAlias
     ParameterLabels:
+      ProjectName:
+        default: "Project Name."
+      Environment:
+        default: "Environment Name."
       DynamoDBTableWithoutSortKey: 
         default: "Create the DyanmoDB table without sort key ? "
       DynamoDBTableName: 
@@ -50,13 +55,19 @@ Metadata:
 
 Parameters:
   ProjectName:
-    Default: ProjectName
+    Default: project
     Description: "The Project Name."
     Type: String
     MinLength: 5
     MaxLength: 30
-    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
-    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+    AllowedPattern: "[a-z]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only lowercase alphabets."
+  Environment:
+    Default: devl
+    Description: "The Environment Name."
+    Type: String
+    AllowedValues: ["devl", "test", "prod"]
+    ConstraintDescription: "The Environment must be devl / test or prod"  
   DynamoDBTableWithoutSortKey:
     Default: true
     Description: "Create The Dynamodb Table Without Sort Key ?"
@@ -127,7 +138,7 @@ Resources:
         - 
           AttributeName: !Ref DynamoDBTablePartitionKey
           KeyType: "HASH"
-      TableName: !Ref DynamoDBTableName
+      TableName: !Sub '${DynamoDBTableName}-${Environment}'
       BillingMode: PAY_PER_REQUEST 
       SSESpecification:
             KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
@@ -136,6 +147,8 @@ Resources:
       Tags: 
         - Key: ProjectName
           Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   DynamoDBTableWithSortKey: 
     Type: AWS::DynamoDB::Table
     Condition: CreateDynamoDBTableWithSortKey
@@ -153,7 +166,7 @@ Resources:
         - 
           AttributeName: !Ref DynamoDBTablePartitionKey
           KeyType: "HASH"
-      TableName: !Ref DynamoDBTableName
+      TableName: !Sub '${DynamoDBTableName}-${Environment}'
       BillingMode: PAY_PER_REQUEST 
       SSESpecification:
             KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
@@ -162,6 +175,8 @@ Resources:
       Tags: 
         - Key: ProjectName
           Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
 Outputs:
   DynamoDBTableArn:
     Condition: CreateDynamoDBTableWithoutSortKey

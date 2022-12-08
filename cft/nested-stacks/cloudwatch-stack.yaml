@@ -19,9 +19,10 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label: 
-        default: "Project Name:"
+        default: "Project And Environment:"
       Parameters: 
         - ProjectName
+        - Environment
     - Label: 
         default: "Lambda Function:"
       Parameters: 
@@ -31,7 +32,7 @@ Metadata:
       Parameters: 
         - SNSTopicName
     - Label: 
-        default: "1. CloudWatch Lambda Invocations Alarm Configuration"
+        default: "1. CloudWatch Lambda Invocations Alarm Configuration:"
       Parameters: 
         - AlarmNameLambdaInvocations
         - AlarmComparisonOperatorLambdaInvocations
@@ -40,7 +41,7 @@ Metadata:
         - DatapointsToAlarmLambdaInvocations
         - EvaluationPeriodsForLambdaInvocations
     - Label: 
-        default: "2. CloudWatch Lambda Error Alarm Configuration"
+        default: "2. CloudWatch Lambda Error Alarm Configuration:"
       Parameters: 
         - AlarmNameLambdaErrors
         - AlarmComparisonOperatorLambdaErrors
@@ -49,7 +50,7 @@ Metadata:
         - DatapointsToAlarmLambdaErrors
         - EvaluationPeriodsForLambdaErrors
     - Label: 
-        default: "3. CloudWatch Lambda Throttles Alarm Configuration"
+        default: "3. CloudWatch Lambda Throttles Alarm Configuration:"
       Parameters: 
         - AlarmNameLambdaThrottles
         - AlarmComparisonOperatorLambdaThrottles
@@ -58,7 +59,7 @@ Metadata:
         - DatapointsToAlarmLambdaThrottles
         - EvaluationPeriodsForLambdaThrottles
     - Label: 
-        default: "4. CloudWatch Lambda Duration Alarm Configuration"
+        default: "4. CloudWatch Lambda Duration Alarm Configuration:"
       Parameters: 
         - AlarmNameLambdaDuration
         - AlarmComparisonOperatorLambdaDuration
@@ -67,7 +68,7 @@ Metadata:
         - DatapointsToAlarmLambdaDuration
         - EvaluationPeriodsForLambdaDuration
     - Label: 
-        default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration"
+        default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration:"
       Parameters: 
         - AlarmNameLambdaConcurrentExecutions
         - AlarmComparisonOperatorLambdaConcurrentExecutions
@@ -78,6 +79,8 @@ Metadata:
     ParameterLabels:
       ProjectName:
         default: "Project Name."
+      Environment:
+        default: "Environment Name."
       LambdaFunctionName: 
         default: "Lambda Function Name for which the CloudWatch Alarm will be created."
       SNSTopicName: 
@@ -149,13 +152,19 @@ Metadata:
         default: "Lambda Concurrent Executions Evaluation Period in seconds."
 Parameters:
   ProjectName:
-    Default: ProjectName
+    Default: project
     Description: "The Project Name."
     Type: String
     MinLength: 5
     MaxLength: 30
-    AllowedPattern: "[A-Z][a-zA-Z0-9-. ]*"
-    ConstraintDescription: "The length should be between 5 and 30, must contain only alphanumeric character, dash, dot or space  and must start with uppercase letter."
+    AllowedPattern: "[a-z]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only lowercase alphabets."
+  Environment:
+    Default: devl
+    Description: "The Environment Name."
+    Type: String
+    AllowedValues: ["devl", "test", "prod"]
+    ConstraintDescription: "The Environment must be devl / test or prod."  
   LambdaFunctionName:
     Default: cwalarm-lambda
     Description: "The Lambda Function Arn for which the CloudWatch Alarm will be created."
@@ -382,7 +391,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '${AlarmNameLambdaInvocations}-${AWS::Region}'
+      AlarmName: !Sub '${AlarmNameLambdaInvocations}-${Environment}-${AWS::Region}'
       AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function invocations" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
@@ -402,7 +411,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '${AlarmNameLambdaErrors}-${AWS::Region}'
+      AlarmName: !Sub '${AlarmNameLambdaErrors}-${Environment}-${AWS::Region}'
       AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function errors" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
@@ -422,7 +431,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '${AlarmNameLambdaThrottles}-${AWS::Region}'
+      AlarmName: !Sub '${AlarmNameLambdaThrottles}-${Environment}-${AWS::Region}'
       AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function throttles" 
       AlarmActions: 
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
@@ -442,7 +451,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '${AlarmNameLambdaDuration}-${AWS::Region}'
+      AlarmName: !Sub '${AlarmNameLambdaDuration}-${Environment}-${AWS::Region}'
       AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function duration" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
@@ -462,7 +471,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '${AlarmNameLambdaConcurrentExecutions}-${AWS::Region}'
+      AlarmName: !Sub '${AlarmNameLambdaConcurrentExecutions}-${Environment}-${AWS::Region}'
       AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda concurrent executions" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'

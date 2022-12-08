@@ -19,25 +19,34 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label:
-        default: "Custom Resource Configuration"
+        default: "Custom Resource Configuration:"
       Parameters:
       - ProjectName
+      - Environment
       - KmsMasterKeyId
     ParameterLabels:
       ProjectName:
         default: "Project Name."
+      Environment:
+        default: "Environment Name."
       KmsMasterKeyId:
         default: "The KMS Key Id Used For Encryption."
 
 Parameters:
   ProjectName:
-    Default: CrossStack
+    Default: project
     Description: "The Project Name for which the custom resource will be used."
     Type: String
     MinLength: 5
     MaxLength: 20
-    AllowedPattern: "[a-zA-Z0-9-]*"
-    ConstraintDescription: The project name should only contain alphanumeric character and must be between 10 and 20 characters.
+    AllowedPattern: "[a-z]*"
+    ConstraintDescription: "The length should be between 5 and 30, must contain only lowercase alphabets."
+  Environment:
+    Default: devl
+    Description: "The Environment Name."
+    Type: String
+    AllowedValues: ["devl", "test", "prod"]
+    ConstraintDescription: "The Environment must be devl / test or prod"
   KmsMasterKeyId:
     Default: "e4c733c5-9fbe-4a90-bda1-6f0362bc9b89"
     Description: "The KMS Key Id Used For Encryption."
@@ -51,7 +60,7 @@ Resources:
   S3CreateFolderCustomResourceLambdaFunction:
      Type: AWS::Lambda::Function
      Properties:
-       FunctionName: !Sub "${ProjectName}-S3-Folder-Creation-Lambda"
+       FunctionName: !Sub "${ProjectName}-s3-folder-creation-lambda-${Environment}-${AWS::Region}"
        Description: "Create Folders and Empty an S3 bucket"
        Handler: index.handler
        Role: !GetAtt S3CreateFolderCustomResourceLambdaExecutionRole.Arn
@@ -95,6 +104,11 @@ Resources:
                     cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
 
                 return "success"
+       Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   S3CreateFolderCustomResourceLambdaExecutionRole:
      Type: AWS::IAM::Role
      Properties:
@@ -117,8 +131,8 @@ Resources:
              - logs:CreateLogStream
              - logs:PutLogEvents
              Effect: Allow
-             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Folder-Creation-Lambda:*'
-         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-Cloudwatch'
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Folder-Creation-Lambda$-{Environment}-${AWS::Region}:*'
+         PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-cloudwatch'
        - PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -134,12 +148,17 @@ Resources:
               - kms:GenerateDataKeyPair
               Effect: Allow
               Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsMasterKeyId}'
-         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-S3'
-       RoleName: !Sub '${ProjectName}-S3-Create-Folder-Custom-Resource-Role'
+         PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-s3'
+       RoleName: !Sub '${ProjectName}-s3-create-folder-custom-resource-role'
+       Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   S3NotificationCustomResourceLambdaFunction:
      Type: AWS::Lambda::Function
      Properties:
-       FunctionName: !Sub "${ProjectName}-S3-Notification-Creation-Lambda"
+       FunctionName: !Sub "${ProjectName}-s3-notification-creation-lambda-${Environment}-${AWS::Region}"
        Description: "Create S3 Notification for Lambda on an existing S3 bucket"
        Handler: index.lambda_handler
        Role: !GetAtt S3NotificationCustomResourceLambdaExecutionRole.Arn
@@ -220,7 +239,11 @@ Resources:
                     NotificationConfiguration={}
                 )
                 print("Delete request completed....")
-
+       Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
   S3NotificationCustomResourceLambdaExecutionRole:
      Type: AWS::IAM::Role
      Properties:
@@ -242,9 +265,9 @@ Resources:
              - logs:CreateLogStream
              - logs:PutLogEvents
              Effect: Allow
-             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Notification-Creation-Lambda:*'
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Notification-Creation-Lambda-${Environment}-${AWS::Region}:*'
            Version: '2012-10-17'
-         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-Cloudwatch'
+         PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-cloudwatch'
        - PolicyDocument:
            Statement:
            - Action:
@@ -253,8 +276,13 @@ Resources:
              Effect: Allow
              Resource: !Sub 'arn:${AWS::Partition}:s3:::*'
            Version: '2012-10-17'
-         PolicyName: !Sub '${ProjectName}-Custom-Resource-Policy-For-S3'
-       RoleName: !Sub '${ProjectName}-S3-Notification-Custom-Resource-Role'
+         PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-s3'
+       RoleName: !Sub '${ProjectName}-s3-notification-custom-resource-role'
+       Tags: 
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
 
 Outputs:
   S3CustomResourceLambdaFunctionExecutionRoleArn:

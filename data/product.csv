@@ -1,0 +1,7 @@
+product_id,product_title,sku,parent_sku,price,color,description
+101,Soflyy T-Shirt,999-X,,,12,,This shirt is awesome.
+102,Soflyy T-Shirt (blue),999-B,999-X,15,blue,
+103,Soflyy T-Shirt (red),999-C,999-X,15,red,
+104,Soflyy Mug,777-X,,,10,This mug is awesome.
+105,Soflyy Mug,777-O,777-X,9,orange,
+106,Soflyy Mug,777-Y,777-X,9,yellow,
