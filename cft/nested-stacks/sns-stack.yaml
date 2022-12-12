@@ -4,11 +4,12 @@ Description: >-
 
 Metadata:
   TemplateName: sns-stack.yaml
-  TemplateType: SNS Topic
+  TemplateType: SNS Topic with Subscription
   Version: 1.0.0
   Owner: Subhamay Bhattacharyya
   ProjectName: Nested Stack Standardization
-  Last Modified: December 6, 2022
+  Modification History:
+    - 1.0.0  - December 06, 2022   -- Initial Version 
   Resources: 
     - SNS Topic with Email subscription
   StepsToTest: |
@@ -44,6 +45,7 @@ Metadata:
       SNSKmsMasterKeyAlias: 
         default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
 Parameters:
+  ############################################ Project And Environment Name ####################
   ProjectName:
     Default: project
     Description: "The Project Name."
@@ -58,6 +60,7 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"
+  ############################################ SNS ###############################################
   SNSTopicBaseName:
     Default: "sns-topic-name"
     Description: "The Base Name Of The Sns Topic."

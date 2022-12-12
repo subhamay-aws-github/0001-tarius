@@ -6,6 +6,8 @@ The user / producer uploads a csv source file to the landing zone S3 bucket. A L
 
 This sample project demonstrate the capability of loading a .csv file into a DynamoDB table using a Lambda function. The Lambda function is triggered using an Event Source Notification created in the S3 bucket. Once the data loads successfully into the table a SNS notification is published and end users are notified via email subscriibed to the SNS Topic. CloudWatch Alarms are created to demonstrate the different metrics on the Lambda function. The S3 Bucket, SNS Topic and the DynamoDB tables are encrypted using Customer Managed KMS Key. The entire stack (excluding the KMS Key is created using CloudFormation templates).
 
+![Project Tauris - Design Diagram]( https://subhamayblog.files.wordpress.com/2022/12/1_tarius_1_1_design_diagram-1.png?w=1024")
+
 ## Getting Started
 
 ### Dependencies
@@ -19,14 +21,14 @@ This sample project demonstrate the capability of loading a .csv file into a Dyn
 * Create a S3 bucket and make it public.
 * Create the folders - tarius/cft/nested-stacks, tarius/cft/cross-stacks, tarius/code
 * Upload the following YAML templates to tarius/cft/nested-stacks
-* 1. cloudwatch-stack.yaml
-* 2. dynamodb-stack.yaml
-* 3. s3-stack.yaml
-* 4. sns-stack.yaml
+    * cloudwatch-stack.yaml
+    * dynamodb-stack.yaml
+    * s3-stack.yaml
+    * sns-stack.yaml
 * Upload the following YAML templates to tarius/cft/cross-stacks
-* 1. custom-resource-lambda-stack.yaml
+    * custom-resource-lambda-stack.yaml
 * Upload the following YAML templates to tarius/cft/
-* 1. tarius-root-stack.yaml
+    * tarius-root-stack.yaml
 * Zip and Upload the Python file  to tarius/cft/code
 * Create the cross-stack using the template custom-resource-lambda-stack.yaml by using the S3 url and pass the appropriate parameters.
 * Create the entire using by using the root stack template custom-resource-lambda-stack.yaml by providing the required parameters and the s3 cross stack name created in the previous step.

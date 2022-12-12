@@ -7,8 +7,8 @@ Metadata:
   TemplateType: S3 bucket with optionally default folder
   Version: 1.0.0
   Owner: Subhamay Bhattacharyya
-  ProjectName: Nested Stack Standardization
-  Last Modified: December 6, 2022
+  Modification History:
+    - 1.0.0  - December 06, 2022   -- Initial Version 
   Resources: 
     - S3 Bucket
   StepsToTest: |
@@ -19,10 +19,10 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label: 
-        default: "Project Name"
+        default: "Project And Environment:"
       Parameters: 
-        - ProjectName
-        - Environment
+      - ProjectName
+      - Environment
     - Label:
         default: "S3 Configuration"
       Parameters:

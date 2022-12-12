@@ -6,10 +6,13 @@ Description: >-
 Metadata:
   TemplateName: tarius-root-stack.yaml
   TemplateType: Lambda / DynamoDB Table / S3 Bucket / SNS Topic with subscription 
-  Version: 1.0.0
+  Version: 1.0.1
   Owner: Subhamay Bhattacharyya
   ProjectName: Project Tarius
-  Last Modified: December 05, 2022
+  Modification History: 
+    - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - December 10, 2022   -- Added the parameter S3KmsMasterKeyAlias in the S3 nested stack.
+
   Resources: 
     - One SNS Topic with KMS Encryption and Email Subscription.
     - One DynamoDB Table with KMS Encryption.
@@ -455,7 +458,7 @@ Parameters:
     MinLength: 10
     MaxLength: 100
     AllowedPattern: "[a-zA-Z0-9-/_.]*"
-    ConstraintDescription: "The length should be between 10 and 100, must contain only lowercase letter,numbers,dash, dot, underscore and should start with a letter."
+    ConstraintDescription: "The length should be between 10 and 100, must contain only lowercase letter,numbers,dash, dot, underscore"
   ################ 1. Lambda Invocations
   AlarmNameLambdaInvocations:
     Default: lambda-function-invocations-alarm
@@ -697,6 +700,7 @@ Resources:
         S3BucketIgnorePublicAcls: !Ref S3BucketIgnorePublicAcls
         S3BucketRestrictPublicBuckets: !Ref S3BucketRestrictPublicBuckets
         S3CustomResourceStackName: !Ref S3CustomResourceStackName
+        S3KmsMasterKeyAlias: !Ref KmsMasterKeyAlias
       TimeoutInMinutes: 5
   TariusDynamoDBTable:
     DeletionPolicy: Delete
