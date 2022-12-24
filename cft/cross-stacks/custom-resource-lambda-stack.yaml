@@ -31,7 +31,7 @@ Metadata:
       Environment:
         default: "Environment Name."
       KmsMasterKeyId:
-        default: "The KMS Key Id Used For Encryption."
+        default: "KMS Key Id."
 
 Parameters:
   ProjectName:
