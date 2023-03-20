@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 10 08:41:01 2022
+
+@author: Subhamay Bhattacharyya
+"""
+
 import json
 import logging
 import boto3
@@ -6,97 +13,197 @@ import os
 
 # Load the exceptions for error handling
 from botocore.exceptions import ClientError, ParamValidationError
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 
-s3 = boto3.client('s3', region_name='us-east-1')
-dynamodb = boto3.client('dynamodb', region_name='us-east-1')
-sns = boto3.client('sns', region_name='us-east-1')
+s3_client = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
+s3_resource = boto3.resource('s3', region_name=os.getenv('AWS_REGION'))
+dynamodb_client = boto3.client('dynamodb', region_name=os.environ.get("AWS_REGION"))
+sns = boto3.client('sns', region_name=os.getenv('AWS_REGION'))
 topic_arn = os.getenv("SNS_TOPIC_ARN")
 dynamodb_table = os.getenv("DYNAMODB_TABLE_NAME")
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def send_sns_message(topic_arn,s3_bucket_name,s3_key):
+def get_event_source(event):
+    
+    if "Records" in event.keys():
+        if "s3" in event.get("Records")[0].keys():
+            return "s3"
+    else:
+        return "unknown"
+        
+def python_obj_to_dynamo_obj(python_obj: dict) -> dict:
+    serializer = TypeSerializer()
+    return {
+        k: serializer.serialize(v)
+        for k, v in python_obj.items()
+    }
+
+def dynamodb_obj_to_python_obj(dynamodb_obj: dict) -> dict:
+    deserializer = TypeDeserializer()
+    return {
+        k: deserializer.deserialize(v)
+        for k, v in dynamodb_obj.items()
+    }
+    
+def send_sns_message(topic_arn, s3_bucket_name, s3_key, s3_key_invalid_records, load_stat):
+    
+        
+    logger.info(f"load stats :: {json.dumps(load_stat)}")
+    if load_stat.get("TOTAL_RECORDS") < load_stat.get("RECORDS_LOADED"):
+        message = f"Data loaded successfully to DynamoDB table {dynamodb_table} from s3://{s3_bucket_name}/{s3_key}, There are some invalid items are saved in the s3 bucket s3://{s3_bucket_name}/{s3_key_invalid_records}"
+    elif load_stat.get("TOTAL_RECORDS") == load_stat.get("FAILED_RECORDS"):
+        message = f"Failed to load all the items and are saved in the s3 bucket s3://{s3_bucket_name}/{s3_key_invalid_records}"
+    else:
+        message = f"Data loaded successfully to DynamoDB table {dynamodb_table} from s3://{s3_bucket_name}/{s3_key}"
+        
+    logger.info(f"message = {message}")
+        
     try:
         response = sns.publish(
-            TopicArn = topic_arn,
-            Message = f"Data loaded successfully to DynamoDB table {dynamodb_table} from s3://{s3_bucket_name}/{s3_key}",
-            Subject = 'DynamoDB table load status',
+            TopicArn=topic_arn,
+            Message=message,
+            Subject='DynamoDB table load status',
         )
         logger.info(f'Message published to the SNS Topic {topic_arn}')
-        logger.info(response)
         return "success"
     # An error occurred
     except ParamValidationError as e:
         logger.error(f"Parameter validation error: {e}")
     except ClientError as e:
         logger.error(f"Client error: {e}")
-        
-        
-def write_dynamo_db(json_data):
+
+def dynamodb_item_exists(partitionKey):
     try:
-        data = dynamodb.batch_write_item(
-            RequestItems = json_data
-        )
-        logger.info('UnprocessedItems: ')
-        logger.info(data['UnprocessedItems'])
-        return data['UnprocessedItems']
+        response = dynamodb_client.get_item(
+                            TableName=dynamodb_table,
+                            Key={
+                                'ID': {'S': partitionKey}
+                            }
+                    )
+
+        if not response.get('Item'):
+            logger.info(f"The item {dict(ID=partitionKey)} does not exist.")
+            return False
+        else:
+            dynamodb_item = dynamodb_obj_to_python_obj(response['Item'])
+            logger.info(f"The item {dict(ID=partitionKey)} exists.")
+            return True
+ 
+        
+    # An error occurred
+    except ParamValidationError as e:
+        logger.error(f"Parameter validation error: {e}") 
+    except ClientError as e:
+        logger.error(f"Client error: {e}")
+        
+def dynamo_db_put_item(item):
+
+    try:
+        response = dynamodb_client.put_item(
+            TableName = dynamodb_table,
+            Item=item
+            )
+
+        return response
     # An error occurred
     except ParamValidationError as e:
         logger.error(f"Parameter validation error: {e}")
     except ClientError as e:
         logger.error(f"Client error: {e}")
         
+def upload_to_s3(bucket,key,invalid_items):
+
+    try:
+        object = s3_resource.Object(bucket_name=bucket,key=key)
+        object.put(Body=invalid_items)
+
+    # An error occurred
+    except ParamValidationError as e:
+        logger.error(f"Parameter validation error: {e}")
+    except ClientError as e:
+        logger.error(f"Client error: {e}")
+
 def download_s3_data(bucket, key):
     try:
-        data_object = s3.get_object(
+        data_object = s3_client.get_object(
             Bucket=bucket,
             Key=key
-            )
-        data_string = data_object['Body'].read().decode('utf-8').splitlines(True)
-        logger.info('Downloaded from S3:')
-        reader = csv.DictReader(data_string)
-
-
+        )
+        data_string = data_object['Body'].read().decode(
+            'utf-8').splitlines(True)
+        logger.info(f"Downloaded file file s3://{bucket}/{key}")
+        reader = csv.DictReader(data_string) 
+    
         list_items = []
         for row in reader:
-            items = dict()
-            attributes = dict()
-            put_request_dict = dict()
-            attributes["product_id"] = dict(N = row["product_id"])
-            attributes["product_title"] = dict(S = row["product_title"])
-            attributes["sku"] =  dict(S = row["sku"])
-            attributes["parent_sku"] =  dict(S = row["parent_sku"])
-            attributes["price"] =  dict(S = row["price"])
-            attributes["color"] =  dict(S = row["color"])
-            attributes["description"] =  dict(S = row["description"])
-            items = dict(Item = attributes)
-            put_request_dict = dict(dict(PutRequest = items))
-            list_items.append(put_request_dict)
-        table_dict = dict()
-        table_dict[dynamodb_table] = list_items
+            Item=python_obj_to_dynamo_obj(row)
+            list_items.append(Item)
 
-        return table_dict
+        return list_items
+
+
     # An error occurred
     except ParamValidationError as e:
         logger.error(f"Parameter validation error: {e}")
+        raise Exception(f"Parameter validation error: {e}")
     except ClientError as e:
         logger.error(f"Client error: {e}")
-        
-def lambda_handler(event, context):
+        raise Exception(f"Client error: {e}")
 
-    s3_bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
-    s3_key = event["Records"][0]["s3"]["object"]["key"]
+
+def lambda_handler(event, context):
     
-    logger.info(f"S3 bucket name : {s3_bucket_name}")
-    logger.info(f"S3 Key : {s3_key}")
+    event_source = get_event_source(event)
     
-    product_data = download_s3_data(s3_bucket_name,s3_key)
-    unprocessed_items = write_dynamo_db(product_data)
-    logger.info(f"Unprocessed Items : {unprocessed_items}")
-    if len(unprocessed_items) == 0:
-         sns_success = send_sns_message(topic_arn,s3_bucket_name,s3_key)
-         if sns_success == "success":
-                 logger.info("SNS Message sent successfully")
+    if event_source == "s3":
+        records_processed = 0
+        invalid_items = []
+        load_stat=dict(TOTAL_RECORDS=0,RECORDS_LOADED=0,FAILED_RECORDS=0)
+        
     
-    return "success"
+        s3_bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
+        s3_key = event["Records"][0]["s3"]["object"]["key"]
+    
+        logger.info(f"S3 bucket name : {s3_bucket_name}")
+        logger.info(f"S3 Key : {s3_key}")
+    
+        product_data = download_s3_data(s3_bucket_name, s3_key)
+        
+        load_stat['TOTAL_RECORDS'] = len(product_data)
+        for item in product_data:
+            python_obj = dynamodb_obj_to_python_obj(item)
+            partition_key = python_obj.get("ID")
+            
+            
+            if partition_key:
+                item_exists = dynamodb_item_exists(partitionKey=partition_key)
+                response = dynamo_db_put_item(item) 
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    records_processed += 1
+                if item_exists:
+                    logger.info(f"Updated the existing item {dict(ID=partition_key)} successfully")
+                else:
+                    logger.info(f"Inserted the new item {dict(ID=partition_key)} successfully")
+            else:
+                invalid_items.append(item)
+    
+        load_stat['RECORDS_LOADED'] = records_processed
+        load_stat['FAILED_RECORDS'] =  len(invalid_items) 
+                
+        s3_key_invalid_records = f"invalid-records/{context.aws_request_id}/invalid_items.json"
+        response = upload_to_s3(s3_bucket_name,s3_key_invalid_records, json.dumps(invalid_items))
+        sns_success = send_sns_message(topic_arn,s3_bucket_name,s3_key,s3_key_invalid_records,load_stat)
+        if sns_success == "success":
+            logger.info("SNS Message sent successfully")
+    else:
+        logger.error(f"Event source : {event_source}")
+        raise Exception("Invalid event source")
+    
+    return {
+        "statsCode": 200,
+        "Message": f"File s3://{s3_bucket_name}/{s3_key} processed successfully !"
+    }
+    

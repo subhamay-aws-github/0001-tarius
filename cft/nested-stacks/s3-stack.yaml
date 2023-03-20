@@ -8,7 +8,8 @@ Metadata:
   Version: 1.0.0
   Owner: Subhamay Bhattacharyya
   Modification History:
-    - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.0  - December 06, 2022   -- Initial Version.
+    - 1.0.1  - February 24, 2023   -- Added comments.
   Resources: 
     - S3 Bucket
   StepsToTest: |
@@ -18,11 +19,13 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label: 
         default: "Project And Environment:"
       Parameters: 
       - ProjectName
       - Environment
+    #################################### S3 Bucket #################################################
     - Label:
         default: "S3 Configuration"
       Parameters:
@@ -34,10 +37,19 @@ Metadata:
       - S3BucketRestrictPublicBuckets
       - S3KmsMasterKeyAlias
     ParameterLabels:
+      ################################## Project Name and Environment ##############################
+    - Label: 
+        default: "Project And Environment:"
       ProjectName:
         default: "Project Name."
       Environment:
         default: "Environment Name."
+      ################################## KMS Key ###################################################
+    - Label: 
+        default: "KMS Configuration:"
+      Parameters: 
+        - S3KmsMasterKeyAlias
+      ################################## S3 Bucket #################################################
       S3LandingZoneBucketBaseName:
         default: "S3 Bucket Base Name."
       S3DataBucketFolder:
@@ -53,6 +65,7 @@ Metadata:
       S3KmsMasterKeyAlias:
         default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
 Parameters:
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: project
     Description: "The Project Name."
@@ -67,6 +80,16 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod" 
+  ###################################### KMS Key ###################################################
+  S3KmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+  ###################################### S3 Bucket #################################################
   S3LandingZoneBucketBaseName:
     Default: some-s3-bucket-name
     Description: "The S3 Bucket Base Name For The Source Data, The Region Will Be Added As Suffix By The Template."
@@ -104,15 +127,8 @@ Parameters:
     Default: "s3-custom-resource-stack"
     Description: "S3 Custom Resource Stack Name"
     Type: String
-  S3KmsMasterKeyAlias:
-    Default: "SB-KMS"
-    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
-    Type: String
-    MinLength: 5
-    MaxLength: 20
-    AllowedPattern: "[a-zA-Z0-9-]*"
-    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
 Resources:
+  ###################################### S3 Bucket #################################################
   S3LandingZoneBucket:
     Type: AWS::S3::Bucket
     Properties:

@@ -10,6 +10,7 @@ Metadata:
   ProjectName: Nested Stack / Cross Stack Standardization
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - February 24, 2023   -- Added comments.
   Resources: 
     - Lambda Function (S3 Custom Resource )
   StepsToTest: |
@@ -19,12 +20,17 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label:
         default: "Custom Resource Configuration:"
       Parameters:
       - ProjectName
       - Environment
-      - KmsMasterKeyId
+    #################################### KMS Key ###################################################
+    - Label: 
+        default: "KMS Configuration:"
+      Parameters: 
+        - KmsMasterKeyId
     ParameterLabels:
       ProjectName:
         default: "Project Name."
@@ -34,6 +40,7 @@ Metadata:
         default: "KMS Key Id."
 
 Parameters:
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: project
     Description: "The Project Name for which the custom resource will be used."
@@ -48,6 +55,7 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"
+  ###################################### KMS Key ###################################################
   KmsMasterKeyId:
     Default: "e4c733c5-9fbe-4a90-bda1-6f0362bc9b89"
     Description: "The KMS Key Id Used For Encryption."
@@ -58,6 +66,7 @@ Parameters:
     ConstraintDescription: "The length of the KMS Key Id should be 36 and must be lowercase alphabets, numbers and dash."
 
 Resources:
+  ###################################### Custom Resource Lambda ####################################
   S3CreateFolderCustomResourceLambdaFunction:
      Type: AWS::Lambda::Function
      Properties:
@@ -110,6 +119,7 @@ Resources:
           Value: !Ref ProjectName
         - Key:  Environment
           Value: !Ref Environment
+  ###################################### Custom Resource Lambda Role ###############################
   S3CreateFolderCustomResourceLambdaExecutionRole:
      Type: AWS::IAM::Role
      Properties:
@@ -156,6 +166,7 @@ Resources:
           Value: !Ref ProjectName
         - Key:  Environment
           Value: !Ref Environment
+  ###################################### S3 Notification Custom Resource Lambda ####################
   S3NotificationCustomResourceLambdaFunction:
      Type: AWS::Lambda::Function
      Properties:
@@ -245,6 +256,7 @@ Resources:
           Value: !Ref ProjectName
         - Key:  Environment
           Value: !Ref Environment
+  ###################################### Custom Resource Lambda Execution Role #####################
   S3NotificationCustomResourceLambdaExecutionRole:
      Type: AWS::IAM::Role
      Properties:

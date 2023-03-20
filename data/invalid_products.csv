@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+   CFN Template to create a Glue Job with Role. 
+
+Metadata:
+  TemplateName: glue-stack.yaml
+  TemplateType: Glue Job with IAM Role
+  Version: 1.0.0
+  Owner: Subhamay Bhattacharyya
+  ProjectName: Nested Stack Standardization
+  Last Modified: September 29, 2022
+  Resources: 

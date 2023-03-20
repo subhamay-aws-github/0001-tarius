@@ -10,6 +10,7 @@ Metadata:
   ProjectName: Nested Stack Standardization
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - February 24, 2023   -- Added comments.
   Resources: 
     - DynamoDB table
   StepsToTest: |
@@ -19,42 +20,37 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label: 
         default: "Project And Environment:"
       Parameters: 
         - ProjectName
         - Environment
+    #################################### KMS Key ###################################################
+    - Label: 
+        default: "KMS Configuration:"
+      Parameters: 
+        - DynamoDBTableKmsMasterKeyAlias
+    #################################### DynamoDB Table ############################################
     - Label: 
         default: "DynamoDB Configuration"
       Parameters: 
-        - DynamoDBTableWithoutSortKey
         - DynamoDBTableName
         - DynamoDBTablePartitionKey
-        - DynamoDBTableSortKey
         - DynamoDBTablePartitionKeyAttributeType
-        - DynamoDBTableSortKeyAttributeType
-        - DynamoDBTableKmsMasterKeyAlias
     ParameterLabels:
       ProjectName:
         default: "Project Name."
       Environment:
         default: "Environment Name."
-      DynamoDBTableWithoutSortKey: 
-        default: "Create the DyanmoDB table without sort key ? "
       DynamoDBTableName: 
         default: "The Name of the DynamoDB Table."
       DynamoDBTablePartitionKey:
         default: "The Name of the Partition Key."
-      DynamoDBTableSortKey:
-        default: "The Name of the Sort Key."
       DynamoDBTablePartitionKeyAttributeType: 
         default: "The Datatype of the DynamoDB Partition Key"
-      DynamoDBTableSortKeyAttributeType: 
-        default: "The Datatype of the DynamoDB Sort Key"
-      DynamoDBTableKmsMasterKeyAlias: 
-        default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
-
 Parameters:
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: project
     Description: "The Project Name."
@@ -69,12 +65,16 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"  
-  DynamoDBTableWithoutSortKey:
-    Default: true
-    Description: "Create The Dynamodb Table Without Sort Key ?"
+  ###################################### KMS Key ###################################################
+  DynamoDBTableKmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
     Type: String
-    AllowedValues: [true, false]
-    ConstraintDescription: "The allowed value is either true or false"
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+  ###################################### DynamoDB Table ############################################
   DynamoDBTableName:
     Default: dynamodb-table-name
     Description: "The Name Of The Dynamodb Table."
@@ -87,8 +87,8 @@ Parameters:
     Default: partition_id
     Description: "The Name Of The Dynamodb Partition Key."
     Type: String
-    MinLength: '5'
-    MaxLength: '30'
+    MinLength: 2
+    MaxLength: 30
     AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
     ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
   DynamoDBTablePartitionKeyAttributeType:
@@ -97,62 +97,10 @@ Parameters:
     Type: String
     AllowedValues: ["N", "S", "B"]
     ConstraintDescription: "the Datatype Should Be Either N (number), S (string) Or B (binary)"
-  DynamoDBTableSortKey:
-    Default: sort_id
-    Description: "The Name Of The Dynamodb Sort Key (Type skip If Creating The Table Without Sort Key)."
-    Type: String
-    MinLength: '0'
-    MaxLength: '30'
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
-    ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
-  DynamoDBTableSortKeyAttributeType:
-    Default: "N"
-    Description: "the Datatype Of The Dynamodb Sort Key."
-    Type: String
-    AllowedValues: ["N", "S", "B"]
-    ConstraintDescription: "The datatype should be either N (Number), S (String) or B (Binary)"
-  DynamoDBTableKmsMasterKeyAlias:
-    Default: "SB-KMS"
-    Description: "The KMS Master Key Id To Be Used For Server Side Encryption."
-    Type: String
-    MinLength: 5
-    MaxLength: 20
-    AllowedPattern: "[a-zA-Z0-9-]*"
-    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
-
-Conditions:
-  CreateDynamoDBTableWithoutSortKey: !Equals [ !Ref DynamoDBTableWithoutSortKey, true ]
-  CreateDynamoDBTableWithSortKey: !Equals [ !Ref DynamoDBTableWithoutSortKey, false ]
-
 Resources:
+  ###################################### DynamoDB Table ############################################
   DynamoDBTable: 
     Type: AWS::DynamoDB::Table
-    Condition: CreateDynamoDBTableWithoutSortKey
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties: 
-      AttributeDefinitions: 
-        - 
-          AttributeName: !Ref DynamoDBTablePartitionKey
-          AttributeType: "N"
-      KeySchema: 
-        - 
-          AttributeName: !Ref DynamoDBTablePartitionKey
-          KeyType: "HASH"
-      TableName: !Sub '${DynamoDBTableName}-${Environment}'
-      BillingMode: PAY_PER_REQUEST 
-      SSESpecification:
-            KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
-            SSEEnabled: True
-            SSEType: KMS
-      Tags: 
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key:  Environment
-          Value: !Ref Environment
-  DynamoDBTableWithSortKey: 
-    Type: AWS::DynamoDB::Table
-    Condition: CreateDynamoDBTableWithSortKey
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties: 
@@ -160,14 +108,11 @@ Resources:
         - 
           AttributeName: !Ref DynamoDBTablePartitionKey
           AttributeType: !Ref DynamoDBTablePartitionKeyAttributeType
-        - 
-          AttributeName: !Ref DynamoDBTableSortKey
-          AttributeType: !Ref DynamoDBTableSortKeyAttributeType
       KeySchema: 
         - 
           AttributeName: !Ref DynamoDBTablePartitionKey
           KeyType: "HASH"
-      TableName: !Sub '${DynamoDBTableName}-${Environment}'
+      TableName: !Sub "${DynamoDBTableName}-${Environment}-${AWS::Region}"
       BillingMode: PAY_PER_REQUEST 
       SSESpecification:
             KMSMasterKeyId: !Sub 'alias/${DynamoDBTableKmsMasterKeyAlias}'
@@ -180,10 +125,5 @@ Resources:
           Value: !Ref Environment
 Outputs:
   DynamoDBTableArn:
-    Condition: CreateDynamoDBTableWithoutSortKey
     Description: The Arn of the DynamoDB Table.
     Value: !GetAtt DynamoDBTable.Arn
-  DynamoDBTableWithSortKeyArn:
-    Condition: CreateDynamoDBTableWithSortKey
-    Description: The Arn of the DynamoDB Table.
-    Value: !GetAtt DynamoDBTableWithSortKey.Arn

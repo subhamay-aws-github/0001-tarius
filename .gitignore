@@ -1,2 +1,9 @@
 .DS_Store
 code/*.zip
+
+.terraform/*
+.terraform.lock.hcl
+response.json
+*.backup
+cdk/
+tf/*

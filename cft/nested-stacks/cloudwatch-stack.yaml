@@ -10,6 +10,7 @@ Metadata:
   ProjectName: Nested Stack Standardization
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - February 24, 2023   -- Added comments.
   Resources: 
     - One CloudWatch Alarm.
   StepsToTest: |
@@ -19,19 +20,23 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label: 
         default: "Project And Environment:"
       Parameters: 
         - ProjectName
         - Environment
+    #################################### Lambda Function ###########################################
     - Label: 
         default: "Lambda Function:"
       Parameters: 
         - LambdaFunctionName
+    #################################### SNS Topic #################################################
     - Label: 
         default: "SNS Topic:"
       Parameters: 
         - SNSTopicName
+    #################################### 1. Lambda Invocations CW Alarm ############################
     - Label: 
         default: "1. CloudWatch Lambda Invocations Alarm Configuration:"
       Parameters: 
@@ -41,6 +46,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaInvocations
         - DatapointsToAlarmLambdaInvocations
         - EvaluationPeriodsForLambdaInvocations
+    #################################### 2. Lambda Error CW Alarm ##################################
     - Label: 
         default: "2. CloudWatch Lambda Error Alarm Configuration:"
       Parameters: 
@@ -50,6 +56,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaErrors
         - DatapointsToAlarmLambdaErrors
         - EvaluationPeriodsForLambdaErrors
+    #################################### 3. Lambda Throttles CW Alarm ##############################
     - Label: 
         default: "3. CloudWatch Lambda Throttles Alarm Configuration:"
       Parameters: 
@@ -59,6 +66,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaThrottles
         - DatapointsToAlarmLambdaThrottles
         - EvaluationPeriodsForLambdaThrottles
+    #################################### 4. Lambda Duration CW Alarm ############################### 
     - Label: 
         default: "4. CloudWatch Lambda Duration Alarm Configuration:"
       Parameters: 
@@ -68,6 +76,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaDuration
         - DatapointsToAlarmLambdaDuration
         - EvaluationPeriodsForLambdaDuration
+    #################################### 5. Lambda Concurrent Executions CW Alarm ################## 
     - Label: 
         default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration:"
       Parameters: 
@@ -78,6 +87,7 @@ Metadata:
         - DatapointsToAlarmLambdaConcurrentExecutions
         - EvaluationPeriodsForLambdaConcurrentExecutions
     ParameterLabels:
+      ################################## Project Name and Environment ##############################
       ProjectName:
         default: "Project Name."
       Environment:
@@ -86,7 +96,7 @@ Metadata:
         default: "Lambda Function Name for which the CloudWatch Alarm will be created."
       SNSTopicName: 
         default: "SNS Topic Name used in the CloudWatch Alarm."
-      ############## 1. Invocations
+      ################################## 1. Lambda Invocations CW Alarm ############################
       AlarmNameLambdaInvocations:
         default: "Lambda Invocations CloudWatch Alarm Name."
       AlarmComparisonOperatorLambdaInvocations: 
@@ -99,7 +109,7 @@ Metadata:
         default: "Lambda Invocations CloudWatch Alarm Datapoints."
       EvaluationPeriodsForLambdaInvocations:
         default: "The number of periods over which data is compared to the specified threshold."
-      ############## 2. Errors
+      ################################## 2. Lambda Error CW Alarm ##################################
       AlarmNameLambdaErrors:
         default: "Lambda Errors CloudWatch Alarm Name."
       AlarmComparisonOperatorLambdaErrors: 
@@ -112,7 +122,7 @@ Metadata:
         default: "Lambda Errors CloudWatch Alarm Datapoints."
       EvaluationPeriodsForLambdaErrors:
         default: "Lambda Errors Evaluation Period in seconds."
-      ############## 3. Throttles
+      ################################## 3. Lambda Throttles CW Alarm ##############################
       AlarmNameLambdaThrottles:
         default: "Lambda Throttles CloudWatch Alarm Name."
       AlarmComparisonOperatorLambdaThrottles: 
@@ -125,7 +135,7 @@ Metadata:
         default: "Lambda Throttles CloudWatch Alarm Datapoints."
       EvaluationPeriodsForLambdaThrottles:
         default: "Lambda Throttles Evaluation Period in seconds."
-      ############## 4. Duration
+      ################################## 4. Lambda Duration CW Alarm ###############################
       AlarmNameLambdaDuration:
         default: "Lambda Duration CloudWatch Alarm Name."
       AlarmComparisonOperatorLambdaDuration: 
@@ -138,7 +148,7 @@ Metadata:
         default: "Lambda Duration CloudWatch Alarm Datapoints."
       EvaluationPeriodsForLambdaDuration:
         default: "Lambda Duration Evaluation Period in seconds."
-      ############## 5. Concurrent Executions
+      ################################## 5. Lambda Concurrent Executions CW Alarm ##################
       AlarmNameLambdaConcurrentExecutions:
         default: "Lambda Concurrent Executions CloudWatch Alarm Name."
       AlarmComparisonOperatorLambdaConcurrentExecutions: 
@@ -152,6 +162,7 @@ Metadata:
       EvaluationPeriodsForLambdaConcurrentExecutions:
         default: "Lambda Concurrent Executions Evaluation Period in seconds."
 Parameters:
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: project
     Description: "The Project Name."
@@ -166,14 +177,16 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod."  
+  ###################################### Lambda Function ###########################################
   LambdaFunctionName:
     Default: cwalarm-lambda
     Description: "The Lambda Function Arn for which the CloudWatch Alarm will be created."
     Type: String
-    MinLength: '5'
-    MaxLength: '255'
+    MinLength: 10
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z0-9-]*'
     ConstraintDescription: Must be between 5 and 255 characters long and begin with a letter and can contain number or hyphen (-).
+  ###################################### SNS Topic #################################################
   SNSTopicName:
     Default: "cloudwatch-alarm-sns-topic"
     Description: The SNS Topic Arn.
@@ -182,7 +195,7 @@ Parameters:
     MaxLength: 50
     AllowedPattern: "[a-z][a-z0-9-]*"
     ConstraintDescription: The length should be between 10 and 50, must contain only lowercase letter,numbers,dash, dot and should start with a letter.
-  ################ 1. Lambda Invocations
+  ###################################### 1. Lambda Invocations CW Alarm ############################
   AlarmNameLambdaInvocations:
     Default: lambda-function-invocations-alarm
     Description: "The Lambda Invocations Demo Alarm."
@@ -223,7 +236,7 @@ Parameters:
     Default: "GreaterThanOrEqualToThreshold"
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 2. Lambda Errors
+  ###################################### 2. Lambda Error CW Alarm ##################################
   AlarmNameLambdaErrors:
     Default: lambda-function-errors-alarm
     Description: "The Lambda Errors Demo Alarm."
@@ -264,7 +277,7 @@ Parameters:
     Default: "GreaterThanOrEqualToThreshold"
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 3. Lambda Throttles
+  ###################################### 3. Lambda Throttles CW Alarm ##############################
   AlarmNameLambdaThrottles:
     Default: lambda-function-throttles-alarm
     Description: "The Lambda Throttles Demo Alarm."
@@ -305,7 +318,7 @@ Parameters:
     Default: "GreaterThanOrEqualToThreshold"
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 4. Lambda Duration
+  ###################################### 4. Lambda Duration CW Alarm ###############################
   AlarmNameLambdaDuration:
     Default: lambda-function-duration-alarm
     Description: "The Lambda Duration Demo Alarm."
@@ -315,7 +328,7 @@ Parameters:
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaDuration:
-    Default: 750000
+    Default: 350
     Description: "The CloudWatch Alarm Threshold.The Number Of Milliseconds The Alarm Will Be Triggered."
     Type: Number
     MinValue: 0
@@ -346,7 +359,7 @@ Parameters:
     Default: "GreaterThanOrEqualToThreshold"
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 5. Lambda Concurrent Executions
+  ###################################### 5. Lambda Concurrent Executions CW Alarm ##################
   AlarmNameLambdaConcurrentExecutions:
     Default: lambda-function-concurrent-executions-alarm
     Description: "The Lambda Concurrent Executions Demo Alarm."
@@ -388,6 +401,7 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
 Resources:
+  ###################################### 1. Lambda Invocations CW Alarm ############################ 
   CloudWatchAlarmInvocations:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -405,9 +419,10 @@ Resources:
       EvaluationPeriods: !Ref EvaluationPeriodsForLambdaInvocations       #### Datapoints to alarm -> DatapointsToAlarm out of EvaluationPeriods
       Dimensions:
         - Name: "FunctionName"
-          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+          Value: !Ref LambdaFunctionName
       Period: !Ref AlarmPeriodInSecondsLambdaInvocations
       TreatMissingData: notBreaching
+  ###################################### 2. Lambda Error CW Alarm ##################################
   CloudWatchAlarmErrors:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -425,9 +440,10 @@ Resources:
       EvaluationPeriods: !Ref EvaluationPeriodsForLambdaErrors
       Dimensions:
         - Name: "FunctionName"
-          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+          Value: !Ref LambdaFunctionName
       Period: !Ref AlarmPeriodInSecondsLambdaErrors
       TreatMissingData: notBreaching
+  ###################################### 3. Lambda Throttles CW Alarm ##############################
   CloudWatchAlarmThrottles:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -445,9 +461,10 @@ Resources:
       EvaluationPeriods: !Ref EvaluationPeriodsForLambdaThrottles
       Dimensions:
         - Name: "FunctionName"
-          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+          Value: !Ref LambdaFunctionName
       Period: !Ref AlarmPeriodInSecondsLambdaThrottles
       TreatMissingData: notBreaching
+  ###################################### 4. Lambda Duration CW Alarm ###############################
   CloudWatchAlarmDuration:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -465,9 +482,10 @@ Resources:
       EvaluationPeriods: !Ref EvaluationPeriodsForLambdaDuration
       Dimensions:
         - Name: "FunctionName"
-          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+          Value: !Ref LambdaFunctionName
       Period: !Ref AlarmPeriodInSecondsLambdaDuration
       TreatMissingData: notBreaching
+  ###################################### 5. Lambda Concurrent Executions CW Alarm ##################
   CloudWatchAlarmConcurrentExecutions:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -485,7 +503,7 @@ Resources:
       EvaluationPeriods: !Ref EvaluationPeriodsForLambdaConcurrentExecutions
       Dimensions:
         - Name: "FunctionName"
-          Value: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${LambdaFunctionName}'
+          Value: !Ref LambdaFunctionName
       Period: !Ref AlarmPeriodInSecondsLambdaConcurrentExecutions
       TreatMissingData: notBreaching
 

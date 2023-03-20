@@ -10,11 +10,13 @@ Metadata:
   Owner: Subhamay Bhattacharyya
   ProjectName: Project Tarius
   Modification History: 
-    - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.0  - December 06, 2022   -- Initial Version.
     - 1.0.1  - December 10, 2022   -- Added the parameter S3KmsMasterKeyAlias in the S3 nested stack.
+    - 1.0.2  - February 24, 2023   -- Added comments.
 
   Resources: 
     - One SNS Topic with KMS Encryption and Email Subscription.
+    - One Dead Letter Queue as Lambda Error Destination
     - One DynamoDB Table with KMS Encryption.
     - One S3 Bucket KMS SSE Encryption and default folder
     - One Lambda Function
@@ -26,22 +28,36 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label: 
         default: "Project And Environment:"
       Parameters: 
         - ProjectName
         - Environment
+    #################################### KMS Key ###################################################
     - Label: 
         default: "KMS Configuration:"
       Parameters: 
         - KmsMasterKeyAlias
         - KmsMasterKeyId
+    #################################### SNS with Email Subscription ###############################
     - Label: 
         default: "SNS Configuration:"
       Parameters: 
         - SNSTopicBaseName
         - SNSTopicDisplayName
         - SNSSubscriptionEmail
+    #################################### Dead Letter Queue #########################################
+    - Label: 
+        default: "SQS Configuration:"
+      Parameters: 
+        - SQSQueueBaseName
+        - DelaySeconds
+        - MaximumMessageSize
+        - MessageRetentionPeriod
+        - ReceiveMessageWaitTimeSeconds
+        - VisibilityTimeout
+    #################################### S3 Bucket #################################################
     - Label:
         default: "S3 Configuration:"
       Parameters:
@@ -55,15 +71,14 @@ Metadata:
       - S3NotificationPrefix
       - S3NotificationSuffix
       - S3CustomResourceStackName
+    #################################### DynamoDB Table ############################################
     - Label: 
         default: "DynamoDB Configuration:"
       Parameters: 
-      - DynamoDBTableWithoutSortKey
       - DynamoDBTableName
       - DynamoDBTablePartitionKey
-      - DynamoDBTableSortKey
       - DynamoDBTablePartitionKeyAttributeType
-      - DynamoDBTableSortKeyAttributeType
+    #################################### Lambda Function ###########################################
     - Label: 
         default: "Lambda Configuration:"
       Parameters: 
@@ -74,6 +89,7 @@ Metadata:
         - LambdaRuntime
         - LambdaCodeBucket
         - LambdaCodeKey
+    #################################### 1. Lambda Invocations CW Alarm ############################
     - Label: 
         default: "1. CloudWatch Lambda Invocations Alarm Configuration:"
       Parameters: 
@@ -83,6 +99,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaInvocations
         - DatapointsToAlarmLambdaInvocations
         - EvaluationPeriodsForLambdaInvocations
+    #################################### 2. Lambda Error CW Alarm ##################################
     - Label: 
         default: "2. CloudWatch Lambda Error Alarm Configuration:"
       Parameters: 
@@ -92,6 +109,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaErrors
         - DatapointsToAlarmLambdaErrors
         - EvaluationPeriodsForLambdaErrors
+    #################################### 3. Lambda Throttles CW Alarm ##############################
     - Label: 
         default: "3. CloudWatch Lambda Throttles Alarm Configuration:"
       Parameters: 
@@ -101,6 +119,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaThrottles
         - DatapointsToAlarmLambdaThrottles
         - EvaluationPeriodsForLambdaThrottles
+    #################################### 4. Lambda Duration CW Alarm ###############################
     - Label: 
         default: "4. CloudWatch Lambda Duration Alarm Configuration:"
       Parameters: 
@@ -110,6 +129,7 @@ Metadata:
         - AlarmPeriodInSecondsLambdaDuration
         - DatapointsToAlarmLambdaDuration
         - EvaluationPeriodsForLambdaDuration
+    #################################### 5. Lambda Concurrent Executions CW Alarm ##################
     - Label: 
         default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration:"
       Parameters: 
@@ -120,23 +140,37 @@ Metadata:
         - DatapointsToAlarmLambdaConcurrentExecutions
         - EvaluationPeriodsForLambdaConcurrentExecutions
     ParameterLabels:
+      ################################## Project Name and Environment ##############################
       ProjectName:
         default: "Project Name."
       Environment:
         default: "Environment Name."
-      ############## KMS Key
+      ################################## KMS Key ###################################################
       KmsMasterKeyAlias:
         default: "KMS Key Alias."
       KmsMasterKeyId:
         default: "KMS Key Id."
-      ############## SNS Topic With Email Subscription
+      ################################## SNS Topic With Email Subscription #########################
       SNSTopicBaseName:
         default: "SNS Topic."
       SNSTopicDisplayName:
         default: "SNS Display Name."
       SNSSubscriptionEmail:
         default: "Email Subscription."
-      ############## S3 Bucket
+      ################################## Dead Letter Queue #########################################
+      SQSQueueBaseName:
+        default: "DLQ Base Name."
+      DelaySeconds:
+        default: "Delay Seconds."
+      MaximumMessageSize:
+        default: "Maximum Message Size."
+      MessageRetentionPeriod: 
+        default: "Message Retention Period."
+      ReceiveMessageWaitTimeSeconds: 
+        default: "Received Message Wait Time Seconds."
+      VisibilityTimeout:
+        default: "Visibility Timeout."
+      ################################## S3 Bucket #################################################
       S3LandingZoneBucketBaseName:
         default: "S3 Bucket Name."
       S3DataBucketFolder:
@@ -157,20 +191,14 @@ Metadata:
         default: "S3 Bucket Prefix For The Event Notification."
       S3NotificationSuffix: 
         default: "S3 Bucket Suffix For The Event Notification."
-      ############## DynamoDB Table
-      DynamoDBTableWithoutSortKey: 
-        default: "Dyanmodb Table Without Sort Key ?"
+      ################################## DynamoDB Table ############################################
       DynamoDBTableName: 
         default: "DynamoDB Table."
       DynamoDBTablePartitionKey:
         default: "Partition Key."
-      DynamoDBTableSortKey:
-        default: "Sort Key."
       DynamoDBTablePartitionKeyAttributeType: 
-        default: "DynamoDB Partition Key."
-      DynamoDBTableSortKeyAttributeType: 
-        default: "DynamoDB Sort Key."
-      ############## Lambda Function
+        default: "Partition Key Datatype."
+      ################################## Lambda Function ###########################################
       LambdaExecutionRoleName:
         default: "Lambda Execution Role."
       LambdaExecutionPolicyName: 
@@ -185,7 +213,7 @@ Metadata:
         default: "Lambda Code S3 Bucket."
       LambdaCodeKey: 
         default: "Lambda Code Zip File."
-      ############## 1. Alarm - Invocations
+      ################################## 1. Lambda Invocations CW Alarm ############################
       AlarmNameLambdaInvocations:
         default: "Lambda Invocations Alarm."
       AlarmComparisonOperatorLambdaInvocations: 
@@ -198,7 +226,7 @@ Metadata:
         default: "Lambda Invocations Alarm Datapoints."
       EvaluationPeriodsForLambdaInvocations:
         default: "Lambda Invocations Alarm Evaluation Periods."
-      ############## 2. Alarm - Errors
+      #################################### 2. Lambda Error CW Alarm ################################
       AlarmNameLambdaErrors:
         default: "Lambda Errors Alarm."
       AlarmComparisonOperatorLambdaErrors: 
@@ -211,7 +239,7 @@ Metadata:
         default: "Lambda Errors Alarm Datapoints."
       EvaluationPeriodsForLambdaErrors:
         default: "Lambda Errors Alarm Evaluation Periods."
-      ############## 3. Alarm - Throttles
+      ################################## 3. Lambda Throttles CW Alarm ##############################
       AlarmNameLambdaThrottles:
         default: "Lambda Throttles Alarm."
       AlarmComparisonOperatorLambdaThrottles: 
@@ -224,7 +252,7 @@ Metadata:
         default: "Lambda Throttles Alarm Datapoints."
       EvaluationPeriodsForLambdaThrottles:
         default: "Lambda Throttles Alarm Evaluation Periods."
-      ############## 4. Alarm - Duration
+      ################################## 4. Lambda Duration CW Alarm ###############################
       AlarmNameLambdaDuration:
         default: "Lambda Duration Alarm."
       AlarmComparisonOperatorLambdaDuration: 
@@ -237,7 +265,7 @@ Metadata:
         default: "Lambda Duration Alarm Datapoints."
       EvaluationPeriodsForLambdaDuration:
         default: "Lambda Duration Alarm Evaluation Periods."
-      ############## 5. Alarm - Concurrent Executions
+      ################################## 5. Lambda Concurrent Executions CW Alarm ##################
       AlarmNameLambdaConcurrentExecutions:
         default: "Lambda Concurrent Executions Alarm."
       AlarmComparisonOperatorLambdaConcurrentExecutions: 
@@ -251,7 +279,7 @@ Metadata:
       EvaluationPeriodsForLambdaConcurrentExecutions:
         default: "Lambda Concurrent Executions Alarm Evaluation Periods."
 Parameters:
-  ############################################ Project And Environment Name ####################
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: tarius
     Description: "The Project Name."
@@ -266,7 +294,7 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"
-  ############################################ KMS ###############################################
+  ###################################### KMS Key ###################################################
   KmsMasterKeyAlias:
     Default: "SB-KMS"
     Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
@@ -283,8 +311,7 @@ Parameters:
     MaxLength: 36
     AllowedPattern: "[a-z0-9-]*"
     ConstraintDescription: "The length of the KMS Key Id should be 36 and must be lowercase alphabets, numbers and dash."
-
-  ############################################ SNS ###############################################
+  ###################################### SNS Topic With Email Subscription #########################
   SNSTopicBaseName:
     Default: "tarius-sns-topic"
     Description: "The Base Name Of The Sns Topic. The Region And Environment Will Be Added As Suffix By The Template."
@@ -302,15 +329,53 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9-. _]*"
     ConstraintDescription: "The length should be between 30 and 200, must alphanumeric character, space, dot dash or underscore."
   SNSSubscriptionEmail:
-    Default: "someone@email.com"
+    Default: "subhamay.aws@gmail.com"
     Description: "The Subscription Email For The Sns Topic."
     Type: String
     MinLength: 10
     MaxLength: 100
     AllowedPattern: "[a-zA-Z0-9-.@_]*"
     ConstraintDescription:  "The length should be between 10 and 100, must be a valid email id."
-
-  ############################################ S3 Bucket ###############################################
+  ###################################### Dead Letter Queue #########################################
+  SQSQueueBaseName:
+    Default: "tarius-sqs-queue"
+    Description: "The Base Name Of The Sqs Queue (Dead Letter Quque). The Region And Environment Will Be Added As Suffix By The Template."
+    Type: String
+    MinLength: 10
+    MaxLength: 40
+    AllowedPattern: "[a-z][a-z0-9-]*"
+    ConstraintDescription: "The length should be between 10 and 40, must contain only lowercase letter, number, dash, dot and should start with a letter."
+  DelaySeconds:
+    Type: Number
+    Description: "Delay Seconds."
+    Default: 0
+    MinValue: 0
+    MaxValue: 900
+  MaximumMessageSize:
+    Type: Number
+    Description: "Maximum Message Size."
+    Default: 262144
+    MinValue: 1024
+    MaxValue: 262144
+  MessageRetentionPeriod:
+    Type: Number
+    Description: "Message Retention Period."
+    Default: 345600
+    MinValue: 60
+    MaxValue: 1209600
+  ReceiveMessageWaitTimeSeconds:
+    Type: Number
+    Description: "Received Message Wait Time Seconds."
+    Default: 0
+    MinValue: 0
+    MaxValue: 20
+  VisibilityTimeout:
+    Type: Number
+    Description: "Visibility Timeout."
+    Default: 30
+    MinValue: 1
+    MaxValue: 43200  
+  ###################################### S3 Bucket #################################################
   S3LandingZoneBucketBaseName:
     Default: tarius-landing-zone
     Description: "The S3 Bucket Base Name For The Source Data. The Region And Environment Will Be Added As Suffix By The Template."
@@ -345,7 +410,7 @@ Parameters:
     Type: String
     AllowedValues: [true, false]
   S3CustomResourceStackName:
-    Default: "custom-resource-stack"
+    Default: "tarius-s3-custom-resource-stack"
     Description: "S3 Custom Resource Stack Name"
     Type: String
   S3NotificationEventName: 
@@ -361,13 +426,7 @@ Parameters:
     Description: "S3 Event Notification Prefix"
     Type: String
     AllowedPattern: '[\*\.a-z]*'
-  ############################################ DynamoDB Table ###############################################
-  DynamoDBTableWithoutSortKey:
-    Default: true
-    Description: "Create The Dynamodb Table Without Sort Key ?"
-    Type: String
-    AllowedValues: [true, false]
-    ConstraintDescription: "The allowed value is either true or false"
+  ###################################### DynamoDB Table ############################################
   DynamoDBTableName:
     Default: tarius-product-table
     Description: "The Name Of The Dynamodb Products Table."
@@ -377,57 +436,42 @@ Parameters:
     AllowedPattern: "[a-z][a-z0-9-]*"
     ConstraintDescription: "The length should be between 10 and 40, must contain only lowercase letter, number, dash and should start with a letter."
   DynamoDBTablePartitionKey:
-    Default: product_id
+    Default: ID
     Description: "The Name Of The Dynamodb Partition Key."
     Type: String
-    MinLength: '5'
-    MaxLength: '30'
+    MinLength: 2
+    MaxLength: 30
     AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
     ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
   DynamoDBTablePartitionKeyAttributeType:
-    Default: "N"
+    Default: "S"
     Description: "The Datatype Of The Dynamodb Partition Key."
     Type: String
     AllowedValues: ["N", "S", "B"]
     ConstraintDescription: "The datatype should be either N (Number), S (String) or B (Binary)"
-  DynamoDBTableSortKey:
-    Default: sort_id
-    Description: "The Name Of The Dynamodb Sort Key (type skip If Creating The Table Without Sort Key)."
-    Type: String
-    MinLength: '0'
-    MaxLength: '30'
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9\-_]*'
-    ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
-  DynamoDBTableSortKeyAttributeType:
-    Default: "N"
-    Description: "The Datatype Of the DynamoDB Sort Key."
-    Type: String
-    AllowedValues: ["N", "S", "B"]
-    ConstraintDescription: "The datatype should be either N (Number), S (String) or B (Binary)"
-
-  ############################################ Lambda Function ###############################################  
+  ###################################### Lambda Function ###########################################
   LambdaExecutionRoleName:
     Default: tarius-lambda-role
     Description: "The Execution Role Of The Lambda Function."
     Type: String
-    MinLength: 5
-    MaxLength: 255
+    MinLength: 10
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 5 and 255 characters long and begin with a letter and can contain number or hyphen (-)."
   LambdaExecutionPolicyName:
     Default: tarius-lambda-policy
     Description: "The Execution Policy Attached To The Lambda Execution Role."
     Type: String
-    MinLength: 5
-    MaxLength: 255
+    MinLength: 10
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 5 and 255 characters long and begin with a letter and can contain number or hyphen (-)."
   LambdaFunctionBaseName:
     Default: tarius-lambda
     Description: "The Base Name The Lambda Function. The Region And Environment Will Be Added As Suffix By The Template."
     Type: String
-    MinLength: 5
-    MaxLength: 255
+    MinLength: 10
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 5 and 255 characters long and begin with a letter and can contain number or hyphen (-)."
   LambdaFunctionTimeoutSecs:
@@ -444,28 +488,28 @@ Parameters:
     AllowedValues: [python3.7 ,python3.8, python3.9]
     ConstraintDescription: "The Lambda runtime should be either Python 3.7, 3.8 or 3.9"
   LambdaCodeBucket:
-    Default: subhamay-project-repo-us-east-1
+    Default: subhamay-projects-repository-us-east-1
     Description: "S3 Bucket Storing The Lambda Code."
     Type: String
-    MinLength: 3
-    MaxLength: 63
+    MinLength: 10
+    MaxLength: 40
     AllowedPattern: "[a-z][a-z0-9-.]*"
     ConstraintDescription: "The length should be between 3 and 63, must contain only lowercase letter,numbers,dash, dot and should start with a letter."
   LambdaCodeKey:
-    Default: 0001-tarius/code/tarius_code.zip
+    Default: 0001-tarius/code/python/tarius_code.zip
     Description: "The Zip File Name Containing The Lambda Code."
     Type: String
     MinLength: 10
     MaxLength: 100
     AllowedPattern: "[a-zA-Z0-9-/_.]*"
     ConstraintDescription: "The length should be between 10 and 100, must contain only lowercase letter,numbers,dash, dot, underscore"
-  ################ 1. Lambda Invocations
+  ###################################### 1. Lambda Invocations CW Alarm ############################
   AlarmNameLambdaInvocations:
     Default: lambda-function-invocations-alarm
     Description: "The Lambda Invocations Alarm Name. The Region And Environment Will Be Added As Suffix By The Template.."
     Type: String
     MinLength: 10
-    MaxLength: 50
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaInvocations:
@@ -501,13 +545,13 @@ Parameters:
     Description: "The Lambda Invocations Alarm Comparison Operator."
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 2. Lambda Errors
+  ###################################### 2. Lambda Error CW Alarm ##################################
   AlarmNameLambdaErrors:
     Default: lambda-function-errors-alarm
     Description: "The Lambda Errors Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
     Type: String
     MinLength: 10
-    MaxLength: 50
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaErrors:
@@ -543,13 +587,13 @@ Parameters:
     Description: "The Lambda Errors Alarm Comparison Operator."
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 3. Lambda Throttles
+  ###################################### 3. Lambda Throttles CW Alarm ##############################
   AlarmNameLambdaThrottles:
     Default: lambda-function-throttles-alarm
     Description: "The Lambda Throttles Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
     Type: String
     MinLength: 10
-    MaxLength: 50
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaThrottles:
@@ -585,17 +629,17 @@ Parameters:
     Description: "The Lambda Throttles Alarm Comparison Operator."
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 4. Lambda Duration
+  ###################################### 4. Lambda Duration CW Alarm ###############################
   AlarmNameLambdaDuration:
     Default: lambda-function-duration-alarm
     Description: "The Lambda Duration Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
     Type: String
     MinLength: 10
-    MaxLength: 50
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaDuration:
-    Default: 750000
+    Default: 500
     Description: "The CloudWatch Alarm Threshold.The Number Of Milliseconds The Alarm Will Be Triggered."
     Type: Number
     MinValue: 0
@@ -627,13 +671,13 @@ Parameters:
     Description: "The Lambda Duration Alarm Comparison Operator."
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
-  ################ 5. Lambda Concurrent Executions
+  ###################################### 5. Lambda Concurrent Executions CW Alarm ##################
   AlarmNameLambdaConcurrentExecutions:
-    Default: lambda-function-concurrent-executions-alarm
+    Default: lambda-function-conc-exec-alarm
     Description: "The Lambda Concurrent Executions Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
     Type: String
     MinLength: 10
-    MaxLength: 50
+    MaxLength: 40
     AllowedPattern: '[a-zA-Z-]*'
     ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaConcurrentExecutions:
@@ -670,12 +714,13 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
 Resources:
+  ###################################### SNS Topic With Email Subscription #########################
   TariusSNSTopic:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-project-repo-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sns-stack.yaml
+      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sns-stack.yaml
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -683,13 +728,32 @@ Resources:
         SNSTopicDisplayName: !Ref SNSTopicDisplayName 
         SNSSubscriptionEmail: !Ref SNSSubscriptionEmail
         SNSKmsMasterKeyAlias: !Ref KmsMasterKeyAlias
-      TimeoutInMinutes: 5
+      TimeoutInMinutes: 15
+  ###################################### Dead Letter Queue #########################################
+  TariusSQSQueue:
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sqs-stack.yaml
+      Parameters:  
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+        QueueName: !Ref SQSQueueBaseName
+        DelaySeconds: !Ref DelaySeconds 
+        KmsMasterKeyAlias: !Ref KmsMasterKeyAlias
+        MaximumMessageSize: !Ref MaximumMessageSize
+        MessageRetentionPeriod: !Ref MessageRetentionPeriod
+        ReceiveMessageWaitTimeSeconds: !Ref ReceiveMessageWaitTimeSeconds
+        VisibilityTimeout: !Ref VisibilityTimeout
+      TimeoutInMinutes: 15
+  ###################################### S3 Bucket #################################################
   TariusS3Bucket:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-project-repo-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/s3-stack.yaml
+      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/s3-stack.yaml
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -701,24 +765,23 @@ Resources:
         S3BucketRestrictPublicBuckets: !Ref S3BucketRestrictPublicBuckets
         S3CustomResourceStackName: !Ref S3CustomResourceStackName
         S3KmsMasterKeyAlias: !Ref KmsMasterKeyAlias
-      TimeoutInMinutes: 5
+      TimeoutInMinutes: 15
+  ###################################### DynamoDB Table ############################################
   TariusDynamoDBTable:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-project-repo-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/dynamodb-stack.yaml
+      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/dynamodb-stack.yaml
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-        DynamoDBTableWithoutSortKey: !Ref DynamoDBTableWithoutSortKey
         DynamoDBTableName: !Ref DynamoDBTableName
         DynamoDBTablePartitionKey: !Ref DynamoDBTablePartitionKey 
         DynamoDBTablePartitionKeyAttributeType: !Ref DynamoDBTablePartitionKeyAttributeType
-        DynamoDBTableSortKey: !Ref DynamoDBTableSortKey
-        DynamoDBTableSortKeyAttributeType: !Ref DynamoDBTableSortKeyAttributeType
         DynamoDBTableKmsMasterKeyAlias: !Ref KmsMasterKeyAlias
-      TimeoutInMinutes: 5
+      TimeoutInMinutes: 15
+  ###################################### Lambda Execution Role #####################################
   TariusLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -740,32 +803,44 @@ Resources:
             - Sid: AllowCloudWatchLogStream
               Effect: Allow
               Action: 
-                - 'logs:CreateLogGroup'
-                - 'logs:CreateLogStream'
-                - 'logs:PutLogEvents'
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
               Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFunctionBaseName}-${Environment}-${AWS::Region}:*'
             - Sid: AllowDynamoDBBatchWriteItem
               Effect: Allow
               Action: 
-                - 'dynamodb:BatchWriteItem'
-                - 'dynamodb:UpdateItem'
+                - dynamodb:GetItem
+                - dynamodb:PutItem
               Resource:
                 - !GetAtt TariusDynamoDBTable.Outputs.DynamoDBTableArn
             - Sid: AllowSNSPublishMessage
               Effect: Allow
               Action: 
-                - 'sns:Publish'
+                - sns:Publish
               Resource:
                 - !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
+            - Sid: AllowSQSSendMessage
+              Effect: Allow
+              Action: 
+                - sqs:SendMessage
+              Resource:
+                - !GetAtt TariusSQSQueue.Outputs.SQSQueueArn
             - Sid: AllowReadAccessToS3Bucket
               Effect: Allow
               Action: 
-                - 's3:GetObject'
-              Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}*'
+                - s3:GetObject
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}/raw-data/*'
+            - Sid: AllowWriteAccessToS3Bucket
+              Effect: Allow
+              Action: 
+                - s3:PutObject
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}/invalid-records/*'
             - Sid: AllowKMSDecryption
               Effect: Allow
               Action: 
                 - kms:Decrypt
+                - kms:Encrypt
                 - kms:GenerateDataKey
                 - kms:GenerateDataKeyPair
               Resource:
@@ -775,6 +850,7 @@ Resources:
           Value: !Ref ProjectName
         - Key:  Environment
           Value: !Ref Environment
+  ###################################### Lambda Function ###########################################
   TariusLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -787,18 +863,32 @@ Resources:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Ref LambdaCodeKey
       Timeout: !Ref LambdaFunctionTimeoutSecs
+      DeadLetterConfig:
+        TargetArn: !GetAtt TariusSQSQueue.Outputs.SQSQueueArn
       MemorySize: 128
       TracingConfig:
         Mode: Active
       Environment:
         Variables:
           SNS_TOPIC_ARN: !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
-          DYNAMODB_TABLE_NAME: !Sub '${DynamoDBTableName}-${Environment}'
+          DYNAMODB_TABLE_NAME: !Sub "${DynamoDBTableName}-${Environment}-${AWS::Region}"
       Tags: 
         - Key: ProjectName
           Value: !Ref ProjectName
         - Key:  Environment
           Value: !Ref Environment
+  TariusEventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    DependsOn:
+      - TariusLambdaFunction
+    Properties:
+        FunctionName: !Sub '${LambdaFunctionBaseName}-${Environment}-${AWS::Region}'
+        Qualifier: "$LATEST"
+        MaximumEventAgeInSeconds: 1800
+        MaximumRetryAttempts: 2
+        # DestinationConfig:
+        #     OnSuccess:
+        #         Destination: !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
   TariusLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -818,6 +908,7 @@ Resources:
       NotificationEventName: !Ref S3NotificationEventName
       Prefix: !Ref S3NotificationPrefix
       Suffix: !Ref S3NotificationSuffix
+  ###################################### CloudWatch Alarms #########################################
   TariusCloudWatchAlarms:
     DependsOn:
       - TariusLambdaFunction
@@ -825,7 +916,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-project-repo-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/cloudwatch-stack.yaml
+      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/cloudwatch-stack.yaml
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -869,6 +960,12 @@ Outputs:
   TariusSNSSubscriptionArn:
     Description: Tarius SNS Topc Subscription Arn
     Value: !GetAtt TariusSNSTopic.Outputs.SNSSubscriptionArn
+  TariusDeadLetterQueueArn:
+    Description: Tarius Dead Letter Queue Arn
+    Value: !GetAtt TariusSQSQueue.Outputs.SQSQueueArn
+  TariusDeadLetterQueueUrl:
+    Description: Tarius Dead Letter Queue URL
+    Value: !GetAtt TariusSQSQueue.Outputs.SQSQueueURL
   TariusS3BucketArn:
     Description: Tarius S3 Bucket Arn
     Value: !GetAtt TariusS3Bucket.Outputs.S3LandingZoneBucketArn

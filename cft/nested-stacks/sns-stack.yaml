@@ -10,6 +10,7 @@ Metadata:
   ProjectName: Nested Stack Standardization
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - February 24, 2023   -- Added comments.
   Resources: 
     - SNS Topic with Email subscription
   StepsToTest: |
@@ -19,18 +20,24 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    #################################### Project Name and Environment ##############################
     - Label: 
         default: "Project And Environment:"
       Parameters: 
         - ProjectName
         - Environment
+    #################################### KMS Key ###################################################
+    - Label: 
+        default: "KMS Configuration:"
+      Parameters: 
+        - SNSKmsMasterKeyAlias
+    #################################### SNS with Email Subscription ###############################
     - Label: 
         default: "SNS Configuration:"
       Parameters: 
         - SNSTopicBaseName
         - SNSTopicDisplayName
         - SNSSubscriptionEmail
-        - SNSKmsMasterKeyAlias
     ParameterLabels:
       ProjectName:
         default: "The Project Name."
@@ -42,10 +49,8 @@ Metadata:
         default: "The SNS Topic Display Name."
       SNSSubscriptionEmail:
         default: "The Email To Subscribe To The SNS Topic."
-      SNSKmsMasterKeyAlias: 
-        default: "The KMS Master Key Alias To Be Used For Server Side Encryption."
 Parameters:
-  ############################################ Project And Environment Name ####################
+  ###################################### Project Name and Environment ##############################
   ProjectName:
     Default: project
     Description: "The Project Name."
@@ -60,7 +65,16 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"
-  ############################################ SNS ###############################################
+  ###################################### KMS Key ###################################################
+  SNSKmsMasterKeyAlias:
+    Default: "SB-KMS"
+    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    AllowedPattern: "[a-zA-Z0-9-]*"
+    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
+  ###################################### SNS with Email Subscription ###############################
   SNSTopicBaseName:
     Default: "sns-topic-name"
     Description: "The Base Name Of The Sns Topic."
@@ -85,16 +99,8 @@ Parameters:
     MaxLength: 100
     AllowedPattern: "[a-zA-Z0-9-.@_]*"
     ConstraintDescription: "The length should be between 10 and 100, must be a valid email id."
-  SNSKmsMasterKeyAlias:
-    Default: "SB-KMS"
-    Description: "The KMS Master Key Alias To Be Used For Server Side Encryption."
-    Type: String
-    MinLength: 5
-    MaxLength: 20
-    AllowedPattern: "[a-zA-Z0-9-]*"
-    ConstraintDescription: "The length of the KMS Key Alias should be beteen 5 and 20 and can only contain lowercase alphanumeric characters and dash."
-
 Resources:
+  ###################################### SNS Topic With Email Subscription #########################
   SNSTopic:
     Type: AWS::SNS::Topic
     Properties: 
