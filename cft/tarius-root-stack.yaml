@@ -5,14 +5,15 @@ Description: >-
 
 Metadata:
   TemplateName: tarius-root-stack.yaml
-  TemplateType: Lambda / DynamoDB Table / S3 Bucket / SNS Topic with subscription 
-  Version: 1.0.1
+  TemplateType: Lambda / DynamoDB Table / S3 Bucket / SNS Topic with subscription / CloudWatch Alerts / SQS
+  Version: 1.0.3
   Owner: Subhamay Bhattacharyya
   ProjectName: Project Tarius
   Modification History: 
     - 1.0.0  - December 06, 2022   -- Initial Version.
     - 1.0.1  - December 10, 2022   -- Added the parameter S3KmsMasterKeyAlias in the S3 nested stack.
     - 1.0.2  - February 24, 2023   -- Added comments.
+    - 1.0.3  - April 21,2023       -- Added Lambda Reserved Concurrency and Memory Size parameters.
 
   Resources: 
     - One SNS Topic with KMS Encryption and Email Subscription.
@@ -87,8 +88,10 @@ Metadata:
         - LambdaFunctionBaseName
         - LambdaFunctionTimeoutSecs
         - LambdaRuntime
+        - LambdaFunctionMemory
         - LambdaCodeBucket
         - LambdaCodeKey
+        - LambdaReservedConcurrency
     #################################### 1. Lambda Invocations CW Alarm ############################
     - Label: 
         default: "1. CloudWatch Lambda Invocations Alarm Configuration:"
@@ -209,10 +212,14 @@ Metadata:
         default: "Lambda Function Timeout."
       LambdaRuntime:
         default: "Lambda Function Runtime."
+      LambdaFunctionMemory:
+        default: "Lambda Function Memory Size."
       LambdaCodeBucket:
         default: "Lambda Code S3 Bucket."
       LambdaCodeKey: 
         default: "Lambda Code Zip File."
+      LambdaReservedConcurrency:
+        default: "Lambda Reserved Concurrency."
       ################################## 1. Lambda Invocations CW Alarm ############################
       AlarmNameLambdaInvocations:
         default: "Lambda Invocations Alarm."
@@ -487,6 +494,13 @@ Parameters:
     Type: String
     AllowedValues: [python3.7 ,python3.8, python3.9]
     ConstraintDescription: "The Lambda runtime should be either Python 3.7, 3.8 or 3.9"
+  LambdaFunctionMemory:
+    Default: 256
+    Description: The Lambda Function Memory in MB.
+    Type: Number
+    MinValue: 128
+    MaxValue: 10240
+    ConstraintDescription: The Lambda Memory should be between 128 and 10240.
   LambdaCodeBucket:
     Default: subhamay-projects-repository-us-east-1
     Description: "S3 Bucket Storing The Lambda Code."
@@ -503,6 +517,12 @@ Parameters:
     MaxLength: 100
     AllowedPattern: "[a-zA-Z0-9-/_.]*"
     ConstraintDescription: "The length should be between 10 and 100, must contain only lowercase letter,numbers,dash, dot, underscore"
+  LambdaReservedConcurrency:
+    Default: 1
+    Description: "Lambda Reserved Concurrency"
+    Type: Number
+    MinValue: 0
+    MaxValue: 5  
   ###################################### 1. Lambda Invocations CW Alarm ############################
   AlarmNameLambdaInvocations:
     Default: lambda-function-invocations-alarm
@@ -865,7 +885,8 @@ Resources:
       Timeout: !Ref LambdaFunctionTimeoutSecs
       DeadLetterConfig:
         TargetArn: !GetAtt TariusSQSQueue.Outputs.SQSQueueArn
-      MemorySize: 128
+      MemorySize: !Ref LambdaFunctionMemory
+      ReservedConcurrentExecutions: !Ref LambdaReservedConcurrency
       TracingConfig:
         Mode: Active
       Environment:
@@ -886,9 +907,6 @@ Resources:
         Qualifier: "$LATEST"
         MaximumEventAgeInSeconds: 1800
         MaximumRetryAttempts: 2
-        # DestinationConfig:
-        #     OnSuccess:
-        #         Destination: !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
   TariusLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

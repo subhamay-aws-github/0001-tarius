@@ -29,7 +29,7 @@ Metadata:
         default: "KMS Configuration:"
       Parameters: 
         - KmsMasterKeyAlias
-    ################################## SQS Queue #################################################
+    #################################### SQS Queue #################################################
     - Label: 
         default: "SQS Configuration"
       Parameters: 

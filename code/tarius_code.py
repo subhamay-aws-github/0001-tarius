@@ -193,8 +193,11 @@ def lambda_handler(event, context):
         load_stat['RECORDS_LOADED'] = records_processed
         load_stat['FAILED_RECORDS'] =  len(invalid_items) 
                 
-        s3_key_invalid_records = f"invalid-records/{context.aws_request_id}/invalid_items.json"
-        response = upload_to_s3(s3_bucket_name,s3_key_invalid_records, json.dumps(invalid_items))
+        # If there are any failed records then upload the invalid records to the S3 bucket under the 
+        # invalid-records/ folder
+        if len(invalid_items) > 0:
+            s3_key_invalid_records = f"invalid-records/{context.aws_request_id}/invalid_items.json"
+            response = upload_to_s3(s3_bucket_name,s3_key_invalid_records, json.dumps(invalid_items))
         sns_success = send_sns_message(topic_arn,s3_bucket_name,s3_key,s3_key_invalid_records,load_stat)
         if sns_success == "success":
             logger.info("SNS Message sent successfully")
