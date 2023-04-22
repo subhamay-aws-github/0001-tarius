@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
    Project Tarius - Root Stack Template To Create A S3 Bucket With A Lambda Function, 
-   Dynamodb Table And Sns Topic With Email Subscription.
+   Dynamodb Table, Dead Letter Queue, CloudWatch Alarms For Lambda And Sns Topic With Email Subscription.
 
 Metadata:
   TemplateName: tarius-root-stack.yaml
