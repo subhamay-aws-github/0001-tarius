@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-   CFN Template To Create A DynamoDB Table. 
+   CFN Template To Create A DynamoDB Table Encrypted With Customer Managed KMS Key. 
 
 Metadata:
   TemplateName: dynamodb-stack.yaml
@@ -11,8 +11,9 @@ Metadata:
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
     - 1.0.1  - February 24, 2023   -- Added comments.
+    - 1.0.2  - April 22, 2023      -- Modified the CFT Description
   Resources: 
-    - DynamoDB table
+    - DynamoDB Table Encrypted With Customer Managed KMS Key
   StepsToTest: |
     Manualy verify the Stack.
   StepsToCleanup: |

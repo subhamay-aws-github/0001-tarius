@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-   CFN Template To Create A S3 Table With Or Without A Folder. 
+   CFN Template To Create A S3 Table Encrypted With Customer Managed KMS Key With Or Without A Folder. 
 
 Metadata:
   TemplateName: s3-stack.yaml
@@ -10,8 +10,9 @@ Metadata:
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version.
     - 1.0.1  - February 24, 2023   -- Added comments.
+    - 1.0.2  - April 22, 2023      -- Modified the CFT Description
   Resources: 
-    - S3 Bucket
+    - S3 Bucket Encrypted With Customer Managed KMS Key.
   StepsToTest: |
     Manualy verify the Stack.
   StepsToCleanup: |

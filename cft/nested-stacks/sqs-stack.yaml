@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-   CFN Template to create a SQS Queue.
+   CFN Template to create a SQS Queue Encrypted With Customer Managed KMS Key.
 
 Metadata:
   TemplateName: sqs-stack.yaml
@@ -8,9 +8,12 @@ Metadata:
   Version: 1.0.0
   Owner: Subhamay Bhattacharyya
   ProjectName: Nested Stack Standardization
-  Last Modified: October 7, 2022
+  Modification History:
+    - 1.0.0  - December 06, 2022   -- Initial Version 
+    - 1.0.1  - February 24, 2023   -- Added comments.
+    - 1.0.2  - April 22, 2023      -- Modified the CFT Description
   Resources: 
-    - SQS Standard Queue
+    - SQS Standard Queue Encrypted With Customer Managed KMS Key.
   StepsToTest: |
     Manualy verify the Stack.
   StepsToCleanup: |
