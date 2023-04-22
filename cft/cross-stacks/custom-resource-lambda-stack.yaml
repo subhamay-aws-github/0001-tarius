@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-   CFN Template to create a S3 Custom Resource Lambda Function. 
+   CFN Template to create a Two S3 Custom Resource Lambda Functions To Create / Delete Default 
+   Folders In The S3 Bucket And Create S3 Event Notification. 
 
 Metadata:
   TemplateName: s3-stack.yaml
@@ -11,8 +12,9 @@ Metadata:
   Modification History:
     - 1.0.0  - December 06, 2022   -- Initial Version 
     - 1.0.1  - February 24, 2023   -- Added comments.
+    - 1.0.2  - April 22, 2023      -- Updated the CFT description
   Resources: 
-    - Lambda Function (S3 Custom Resource )
+    - Two Lambda Functions (S3 Custom Resource )
   StepsToTest: |
     Manualy verify the Stack.
   StepsToCleanup: |
@@ -22,7 +24,7 @@ Metadata:
     ParameterGroups:
     #################################### Project Name and Environment ##############################
     - Label:
-        default: "Custom Resource Configuration:"
+        default: "Project Name And Environment:"
       Parameters:
       - ProjectName
       - Environment
@@ -64,7 +66,6 @@ Parameters:
     MaxLength: 36
     AllowedPattern: "[a-z0-9-]*"
     ConstraintDescription: "The length of the KMS Key Id should be 36 and must be lowercase alphabets, numbers and dash."
-
 Resources:
   ###################################### Custom Resource Lambda ####################################
   S3CreateFolderCustomResourceLambdaFunction:
